@@ -22,20 +22,77 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
+	"bytes"
+	"os"
+	"path/filepath"
+	"text/template"
 
+	"github.com/gookit/color"
+	"github.com/gosimple/slug"
 	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/core"
 )
 
-func init() {
-	rootCmd.AddCommand(workspaceCmd)
+type WorkSpaceCmd struct {
+	Name  string
+	Scope string
 }
 
-var workspaceCmd = &cobra.Command{
-	Use:   "workspace",
-	Short: "Print the version number of sublime",
-	Long:  `All software has versions. This is Sublime's`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Sublime CLI v0.0.1 -- HEAD")
-	},
+func init() {
+	cmd := &WorkSpaceCmd{}
+	workspaceCmd := NewWorkspaceCmd(cmd)
+	rootCmd.AddCommand(workspaceCmd)
+
+	workspaceCmd.Flags().StringVar(&cmd.Name, "name", "", "Workspace folder name")
+	workspaceCmd.MarkFlagRequired("name")
+
+	workspaceCmd.Flags().StringVar(&cmd.Scope, "scope", "", "Workspace scope name")
+	workspaceCmd.MarkFlagRequired("scope")
+}
+
+func NewWorkspaceCmd(cmd *WorkSpaceCmd) *cobra.Command {
+
+	return &cobra.Command{
+		Use:   "workspace",
+		Short: "Print the version number of sublime",
+		Long:  `All software has versions. This is Sublime's`,
+		Run:   cmd.Run,
+	}
+}
+
+func (ctx *WorkSpaceCmd) Run(cmd *cobra.Command, args []string) {
+	color.Info.Printf("Creating new workspace: %s", ctx.Name)
+
+	workspaceDir := filepath.Join(core.GetEnvironment().WorkspaceRoot, slug.Make(ctx.Name))
+	if err := os.Mkdir(workspaceDir, 0755); err != nil {
+		color.Error.Printf("Error creating workspace: %s", ctx.Name)
+		os.Exit(1)
+	}
+
+	vars := make(map[string]interface{})
+	vars["Name"] = "Brienne"
+	vars["House"] = "Tarth"
+	vars["Traits"] = []string{"Brave", "Loyal"}
+
+	file, _ := os.Create(filepath.Join(workspaceDir, "my.txt"))
+	resultA := ProcessString("{{.Name}} of house {{.House}}", vars)
+}
+
+func process(t *template.Template, vars interface{}) string {
+	var tmplBytes bytes.Buffer
+
+	err := t.Execute(&tmplBytes, vars)
+	if err != nil {
+		panic(err)
+	}
+	return tmplBytes.String()
+}
+
+func ProcessString(str string, vars interface{}) string {
+	tmpl, err := template.New("tmpl").Parse(str)
+
+	if err != nil {
+		panic(err)
+	}
+	return process(tmpl, vars)
 }

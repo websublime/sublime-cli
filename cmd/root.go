@@ -27,23 +27,24 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/websublime/sublime-cli/core"
 )
 
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "sublime-cli",
-	Short: "CLI tool to manage projects",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+var rootCmd = NewRootCmd()
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+func NewRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "sublime-cli",
+		Short: "CLI tool to manage projects",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				cmd.Help()
+			}
+		},
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -62,7 +63,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./.sublime.json)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .sublime.json)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -75,12 +76,10 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
 		// Search config in home directory with name ".sublime" (without extension).
-		viper.AddConfigPath(home)
+		root := core.GetEnvironment().WorkspaceRoot
+
+		viper.AddConfigPath(root)
 		viper.SetConfigType("json")
 		viper.SetConfigName(".sublime")
 	}
