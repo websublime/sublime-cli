@@ -28,6 +28,31 @@ import (
 
 type EmptyVars struct{}
 
+type PackageJsonVars struct {
+	Namespace string
+	Repo      string
+	Username  string
+	Email     string
+}
+
+type VitePackageJsonVars struct {
+	Namespace string
+}
+
+type SublimeJsonVars struct {
+	Name      string
+	Scope     string
+	Repo      string
+	Namespace string
+	Root      string
+}
+
+type ReleaseYamlVars struct {
+	Username string
+	Email    string
+	Scope    string
+}
+
 func process(t *template.Template, vars interface{}) string {
 	var tmplBytes bytes.Buffer
 
