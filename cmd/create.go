@@ -20,3 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 package cmd
+
+import "github.com/spf13/cobra"
+
+type CreateCommand struct{}
+
+func init() {
+	cmd := &CreateCommand{}
+	createCmd := NewCreatCmd(cmd)
+	rootCmd.AddCommand(createCmd)
+}
+
+func NewCreatCmd(cmdCreate *CreateCommand) *cobra.Command {
+	return &cobra.Command{
+		Use:   "create",
+		Short: "Create libs or packages",
+		Run:   func(cmd *cobra.Command, args []string) {},
+	}
+}

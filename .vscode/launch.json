@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["--config", "ws-libs-ui/.sublime.json", "--root", "./ws-libs-ui"]
+            "args": ["--root", "./ws-libs-ui"]
         },
         {
             "name": "Attach to Process",

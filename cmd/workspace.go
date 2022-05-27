@@ -70,8 +70,7 @@ func init() {
 func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "workspace",
-		Short: "Print the version number of sublime",
-		Long:  `All software has versions. This is Sublime's`,
+		Short: "Create a workspace project",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdWsp.Run(cmd)
 			cmdWsp.Workflows()

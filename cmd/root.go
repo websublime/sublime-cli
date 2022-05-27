@@ -82,21 +82,13 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig(rootCommand *RootCommand) {
-	root := rootCommand.Root
 	sublime := core.GetSublime()
 
-	if root != "" {
-		sublime.SetRoot(root)
+	if rootCommand.Root != "" {
+		sublime.SetRoot(rootCommand.Root)
 	}
 
 	if rootCommand.ConfigFile != "" {
-		var result map[string]interface{}
-		data, _ := os.ReadFile(rootCommand.ConfigFile)
-		json.Unmarshal(data, &result)
-		json.Unmarshal(data, &sublime)
-
-		sublime.SetRoot(filepath.Join(root, result["root"].(string)))
-
 		viper.SetConfigFile(rootCommand.ConfigFile)
 	} else {
 		// Search config in home directory with name ".sublime" (without extension).
@@ -109,6 +101,17 @@ func initConfig(rootCommand *RootCommand) {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
+		configFile := viper.ConfigFileUsed()
+
+		if !filepath.IsAbs(configFile) {
+			configFile = filepath.Join(sublime.Root, configFile)
+		}
+
+		data, _ := os.ReadFile(configFile)
+		json.Unmarshal(data, &sublime)
+
+		sublime.Root = filepath.Dir(configFile)
+
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
 }
