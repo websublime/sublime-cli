@@ -21,20 +21,35 @@ THE SOFTWARE.
 */
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+)
 
-type CreateCommand struct{}
+type CreateCommand struct {
+	Name string
+	Type string
+}
 
 func init() {
 	cmd := &CreateCommand{}
-	createCmd := NewCreatCmd(cmd)
+	createCmd := NewCreateCmd(cmd)
 	rootCmd.AddCommand(createCmd)
+
+	createCmd.Flags().StringVar(&cmd.Name, "name", "", "Lib or package name [REQUIRED]")
+	createCmd.MarkFlagRequired("name")
+
+	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
+	createCmd.MarkFlagRequired("name")
 }
 
-func NewCreatCmd(cmdCreate *CreateCommand) *cobra.Command {
+func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
 		Short: "Create libs or packages",
 		Run:   func(cmd *cobra.Command, args []string) {},
 	}
 }
+
+func (ctx *CreateCommand) Library(cmd *cobra.Command) {}
+
+func (ctx *CreateCommand) Package(cmd *cobra.Command) {}
