@@ -1,0 +1,13 @@
+dist
+types
+coverage
+**/*.d.ts
+temp/*
+node_modules/
+.cache
+build
+**/node_modules/**
+.nuxt
+loader
+www
+*.json

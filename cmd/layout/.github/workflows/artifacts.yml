@@ -1,0 +1,72 @@
+name: Build and Deploy Production artifacts
+
+on:
+  push:
+    tags:
+      - '**'
+
+env:
+  CI: true
+
+jobs:
+  artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build
+        env:
+          NODE_ENV: "production"
+        run: yarn build
+
+      - name: Artifact ws-ui-common
+        if: contains(github.ref_name, 'ws-ui-common')
+        env:
+          HOST: ${{ secrets.MINIO_HOST }}
+          KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          SECRET: ${{ secrets.MINIO_SECRET_KEY }}
+        run: |
+          PACKAGE_VERSION=$(cat libs/ws-ui-common/package.json | jq -r '.version')
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          chmod +x mc
+          ./mc alias set storage "$HOST" "$KEY" "$SECRET" --api S3v4
+          ./mc cp --recursive libs/ws-ui-common/dist/ storage/pkg/ws-ui-common/"$PACKAGE_VERSION"/
+
+      - name: Artifact ws-ui-inspector
+        if: contains(github.ref_name, 'ws-ui-inspector')
+        env:
+          HOST: ${{ secrets.MINIO_HOST }}
+          KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          SECRET: ${{ secrets.MINIO_SECRET_KEY }}
+          HASH: ${{ github.sha }}
+        run: |
+          PACKAGE_VERSION=$(cat libs/ws-ui-inspector/package.json | jq -r '.version')
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          chmod +x mc
+          ./mc alias set storage "$HOST" "$KEY" "$SECRET" --api S3v4
+          ./mc cp --recursive libs/ws-ui-inspector/dist/ storage/pkg/ws-ui-inspector/"$PACKAGE_VERSION"/
+
+      - name: Artifact ws-ui-header
+        if: contains(github.ref_name, 'ws-ui-header')
+        env:
+          HOST: ${{ secrets.MINIO_HOST }}
+          KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          SECRET: ${{ secrets.MINIO_SECRET_KEY }}
+          HASH: ${{ github.sha }}
+        run: |
+          PACKAGE_VERSION=$(cat packages/ws-ui-header/package.json | jq -r '.version')
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          chmod +x mc
+          ./mc alias set storage "$HOST" "$KEY" "$SECRET" --api S3v4
+          ./mc cp --recursive packages/ws-ui-header/dist/ storage/pkg/ws-ui-header/"$PACKAGE_VERSION"/

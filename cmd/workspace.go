@@ -22,10 +22,11 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bytes"
+	"embed"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"text/template"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/gosimple/slug"
@@ -36,7 +37,11 @@ import (
 type WorkSpaceCmd struct {
 	Name  string
 	Scope string
+	Repo  string
 }
+
+//go:embed layout/*
+var layoutFiles embed.FS
 
 func init() {
 	cmd := &WorkSpaceCmd{}
@@ -48,6 +53,9 @@ func init() {
 
 	workspaceCmd.Flags().StringVar(&cmd.Scope, "scope", "", "Workspace scope name")
 	workspaceCmd.MarkFlagRequired("scope")
+
+	workspaceCmd.Flags().StringVar(&cmd.Repo, "repo", "", "Github repo shortcut (you/repo)")
+	workspaceCmd.MarkFlagRequired("repo")
 }
 
 func NewWorkspaceCmd(cmd *WorkSpaceCmd) *cobra.Command {
@@ -61,7 +69,7 @@ func NewWorkspaceCmd(cmd *WorkSpaceCmd) *cobra.Command {
 }
 
 func (ctx *WorkSpaceCmd) Run(cmd *cobra.Command, args []string) {
-	color.Info.Printf("Creating new workspace: %s", ctx.Name)
+	color.Info.Println("Creating new workspace: ", ctx.Name)
 
 	workspaceDir := filepath.Join(core.GetEnvironment().WorkspaceRoot, slug.Make(ctx.Name))
 	if err := os.Mkdir(workspaceDir, 0755); err != nil {
@@ -69,30 +77,31 @@ func (ctx *WorkSpaceCmd) Run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	vars := make(map[string]interface{})
-	vars["Name"] = "Brienne"
-	vars["House"] = "Tarth"
-	vars["Traits"] = []string{"Brave", "Loyal"}
+	fs.WalkDir(layoutFiles, "layout", func(path string, info fs.DirEntry, err error) error {
+		relativePath := strings.ReplaceAll(path, "layout/", "")
+		workspacePath := filepath.Join(workspaceDir, relativePath)
+		hasLayout := strings.Contains(relativePath, "layout")
 
-	file, _ := os.Create(filepath.Join(workspaceDir, "my.txt"))
-	resultA := ProcessString("{{.Name}} of house {{.House}}", vars)
-}
+		if info.IsDir() && !hasLayout {
+			os.Mkdir(workspacePath, 0755)
+			color.Success.Println("Copy: ", relativePath, "To: ", workspaceDir)
+		} else if !hasLayout {
+			os.Create(workspacePath)
+			color.Success.Println("Copy: ", relativePath, "To: ", workspaceDir)
+		}
 
-func process(t *template.Template, vars interface{}) string {
-	var tmplBytes bytes.Buffer
+		return nil
+	})
 
-	err := t.Execute(&tmplBytes, vars)
-	if err != nil {
-		panic(err)
-	}
-	return tmplBytes.String()
-}
+	//editorConfigFile, _ := os.Create(filepath.Join(workspaceDir, ".editorconfig"))
+	//eslintIgnoreFile, _ := os.Create(filepath.Join(workspaceDir, ".eslintignore"))
+	//eslintFile, _ := os.Create(filepath.Join(workspaceDir, ".eslintrc.json"))
+	//gitIgnoreFile, _ := os.Create(filepath.Join(workspaceDir, ".gitignore"))
+	//prettierFile, _ := os.Create(filepath.Join(workspaceDir, ".prettierrc.json"))
 
-func ProcessString(str string, vars interface{}) string {
-	tmpl, err := template.New("tmpl").Parse(str)
-
-	if err != nil {
-		panic(err)
-	}
-	return process(tmpl, vars)
+	//layouts.CreateEditorFile(editorConfigFile)
+	//layouts.CreateEslintIgnoreFile(eslintIgnoreFile)
+	//layouts.CreateEslintFile(eslintFile)
+	//layouts.CreateGitIgnoreFile(gitIgnoreFile)
+	//layouts.CreatePrettierFile(prettierFile)
 }
