@@ -4,5 +4,5 @@
   "repo": "{{ .Repo }}",
   "namespace": "{{ .Namespace }}",
   "root": "{{ .Root }}",
-  "packages": {}
+  "packages": []
 }

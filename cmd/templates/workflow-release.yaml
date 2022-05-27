@@ -34,11 +34,11 @@ jobs:
 
       - name: Setup CI Git User
         run: |
-          git config --global user.name "miguelramos"
-          git config --global user.email "miguel.marques.ramos@gmail.com"
+          git config --global user.name "[[ .Username ]]"
+          git config --global user.email "[[ .Email ]]"
           cat << EOF > "$HOME/.npmrc"
             //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN
-            @cookyer:registry=https://npm.pkg.github.com
+            [[.Scope]]:registry=https://npm.pkg.github.com
           EOF
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

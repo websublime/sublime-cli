@@ -35,7 +35,7 @@ import (
 	"github.com/websublime/sublime-cli/utils"
 )
 
-type WorkSpaceCmd struct {
+type WorkSpaceCommand struct {
 	Name     string
 	Scope    string
 	Repo     string
@@ -47,7 +47,7 @@ type WorkSpaceCmd struct {
 var templates embed.FS
 
 func init() {
-	cmd := &WorkSpaceCmd{}
+	cmd := &WorkSpaceCommand{}
 	workspaceCmd := NewWorkspaceCmd(cmd)
 	rootCmd.AddCommand(workspaceCmd)
 
@@ -67,7 +67,7 @@ func init() {
 	workspaceCmd.MarkFlagRequired("email")
 }
 
-func NewWorkspaceCmd(cmdWsp *WorkSpaceCmd) *cobra.Command {
+func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "workspace",
 		Short: "Print the version number of sublime",
@@ -79,13 +79,13 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCmd) *cobra.Command {
 	}
 }
 
-func (ctx *WorkSpaceCmd) Run(cmd *cobra.Command) {
+func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("🚀 Creating new workspace: ", ctx.Name)
 
 	rootNamespace := strings.Join([]string{ctx.Scope, slug.Make(ctx.Name)}, "/")
 	viteNamespace := strings.Join([]string{ctx.Scope, "vite"}, "/")
 
-	workspaceDir := filepath.Join(core.GetEnvironment().WorkspaceRoot, slug.Make(ctx.Name))
+	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
 	if err := os.Mkdir(workspaceDir, 0755); err != nil {
 		color.Error.Printf("Error creating workspace: %s", ctx.Name)
 		os.Exit(1)
@@ -112,28 +112,28 @@ func (ctx *WorkSpaceCmd) Run(cmd *cobra.Command) {
 		Repo:      ctx.Repo,
 		Username:  ctx.Username,
 		Email:     ctx.Email,
-	}))
+	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Package json created and configured!")
 
 	vitePkgJsonFile, _ := os.Create(filepath.Join(workspaceDir, "libs/vite/package.json"))
 	vitePkgJsonFile.WriteString(utils.ProcessString(string(vitePackageJson), &utils.VitePackageJsonVars{
 		Namespace: viteNamespace,
-	}))
+	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Vite plugin ready!")
 
 	tsConfigBaseFile, _ := os.Create(filepath.Join(workspaceDir, "tsconfig.base.json"))
 	tsConfigBaseFile.WriteString(utils.ProcessString(string(tsconfigBaseJson), &utils.VitePackageJsonVars{
 		Namespace: viteNamespace,
-	}))
+	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
 
 	changesetConfigFile, _ := os.Create(filepath.Join(workspaceDir, ".changeset/config.json"))
 	changesetConfigFile.WriteString(utils.ProcessString(string(changesetConfigJson), &utils.PackageJsonVars{
 		Namespace: rootNamespace,
-	}))
+	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Changeset created and configured!")
 
@@ -144,22 +144,22 @@ func (ctx *WorkSpaceCmd) Run(cmd *cobra.Command) {
 		Scope:     ctx.Scope,
 		Repo:      ctx.Repo,
 		Root:      "./",
-	}))
+	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Sublime json created and configured!")
 }
 
-func (ctx *WorkSpaceCmd) Workflows() {
-	workspaceDir := filepath.Join(core.GetEnvironment().WorkspaceRoot, slug.Make(ctx.Name))
+func (ctx *WorkSpaceCommand) Workflows() {
+	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
 
 	releaseYaml, _ := templates.ReadFile("templates/workflow-release.yaml")
 
-	releaseYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/artifact.yaml"))
+	releaseYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/release.yaml"))
 	releaseYamlFile.WriteString(utils.ProcessString(string(releaseYaml), &utils.ReleaseYamlVars{
 		Username: ctx.Username,
 		Email:    ctx.Email,
 		Scope:    ctx.Scope,
-	}))
+	}, "[[", "]]"))
 
 	color.Info.Println("❤️‍🔥 Github action release created!")
 

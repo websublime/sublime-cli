@@ -22,15 +22,20 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/websublime/sublime-cli/core"
 )
 
-var cfgFile string
+type RootCommand struct {
+	ConfigFile string
+	Root       string
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = NewRootCmd()
@@ -57,13 +62,18 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	rootCommand := &RootCommand{}
+
+	cobra.OnInitialize(func() {
+		initConfig(rootCommand)
+	})
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is .sublime.json)")
+	rootCmd.PersistentFlags().StringVar(&rootCommand.ConfigFile, "config", "", "config file (default is .sublime.json)")
+	rootCmd.PersistentFlags().StringVar(&rootCommand.Root, "root", "", "Project working dir, default to current dir")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -71,15 +81,26 @@ func init() {
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+func initConfig(rootCommand *RootCommand) {
+	root := rootCommand.Root
+	sublime := core.GetSublime()
+
+	if root != "" {
+		sublime.SetRoot(root)
+	}
+
+	if rootCommand.ConfigFile != "" {
+		var result map[string]interface{}
+		data, _ := os.ReadFile(rootCommand.ConfigFile)
+		json.Unmarshal(data, &result)
+		json.Unmarshal(data, &sublime)
+
+		sublime.SetRoot(filepath.Join(root, result["root"].(string)))
+
+		viper.SetConfigFile(rootCommand.ConfigFile)
 	} else {
 		// Search config in home directory with name ".sublime" (without extension).
-		root := core.GetEnvironment().WorkspaceRoot
-
-		viper.AddConfigPath(root)
+		viper.AddConfigPath(sublime.Root)
 		viper.SetConfigType("json")
 		viper.SetConfigName(".sublime")
 	}

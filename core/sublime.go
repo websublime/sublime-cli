@@ -19,55 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package utils
+package core
 
 import (
-	"bytes"
-	"html/template"
+	"os"
+	"path/filepath"
 )
 
-type EmptyVars struct{}
+type PackageType string
 
-type PackageJsonVars struct {
-	Namespace string
-	Repo      string
-	Username  string
-	Email     string
+const (
+	Library PackageType = "lib"
+	Package PackageType = "pkg"
+)
+
+type Packages struct {
+	Name  string      `json:"name"`
+	Scope string      `json:"scope"`
+	Type  PackageType `json:"type"`
 }
 
-type VitePackageJsonVars struct {
-	Namespace string
+type Sublime struct {
+	Name      string     `json:"name"`
+	Scope     string     `json:"scope"`
+	Repo      string     `json:"repo"`
+	Namespace string     `json:"namespace"`
+	Root      string     `json:"root"`
+	Packages  []Packages `json:"packages"`
 }
 
-type SublimeJsonVars struct {
-	Name      string
-	Scope     string
-	Repo      string
-	Namespace string
-	Root      string
-}
+var sublime = NewSublime()
 
-type ReleaseYamlVars struct {
-	Username string
-	Email    string
-	Scope    string
-}
+func NewSublime() *Sublime {
+	dir, _ := os.Getwd()
 
-func process(t *template.Template, vars interface{}) string {
-	var tmplBytes bytes.Buffer
-
-	err := t.Execute(&tmplBytes, vars)
-	if err != nil {
-		panic(err)
+	return &Sublime{
+		Root:     dir,
+		Packages: []Packages{},
 	}
-	return tmplBytes.String()
 }
 
-func ProcessString(str string, vars interface{}, delimLeft string, delimRight string) string {
-	tmpl, err := template.New("tmpl").Delims(delimLeft, delimRight).Parse(str)
+func GetSublime() *Sublime {
+	return sublime
+}
 
-	if err != nil {
-		panic(err)
+func (ctx *Sublime) SetRoot(path string) {
+	dir, _ := os.Getwd()
+
+	if filepath.IsAbs(path) {
+		ctx.Root = path
+	} else {
+		ctx.Root = filepath.Join(dir, path)
 	}
-	return process(tmpl, vars)
 }
