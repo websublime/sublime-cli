@@ -22,16 +22,50 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"os/exec"
+	"path/filepath"
+	"sort"
+
+	"github.com/gookit/color"
+	"github.com/gosimple/slug"
 	"github.com/spf13/cobra"
 )
 
 type CreateCommand struct {
-	Name string
+	Name      string
+	Type      string
+	Template  string
+	Templates []LibTemplate
+}
+
+type LibTemplate struct {
 	Type string
+	Link string
 }
 
 func init() {
-	cmd := &CreateCommand{}
+	templates := []LibTemplate{
+		{
+			Type: "vue",
+			Link: "",
+		},
+		{
+			Type: "lit",
+			Link: "",
+		},
+		{
+			Type: "solid",
+			Link: "",
+		},
+		{
+			Type: "react",
+			Link: "",
+		},
+	}
+
+	cmd := &CreateCommand{
+		Templates: templates,
+	}
 	createCmd := NewCreateCmd(cmd)
 	rootCmd.AddCommand(createCmd)
 
@@ -40,16 +74,41 @@ func init() {
 
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
 	createCmd.MarkFlagRequired("name")
+
+	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit, react, solid, vue)")
+	createCmd.MarkFlagRequired("template")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
 		Short: "Create libs or packages",
-		Run:   func(cmd *cobra.Command, args []string) {},
+		Run: func(cmd *cobra.Command, args []string) {
+			if cmdCreate.Type == "lib" {
+				cmdCreate.Library(cmd)
+			}
+
+			if cmdCreate.Type == "pkg" {
+				cmdCreate.Package((cmd))
+			}
+		},
 	}
 }
 
-func (ctx *CreateCommand) Library(cmd *cobra.Command) {}
+func (ctx *CreateCommand) Library(cmd *cobra.Command) {
+	idx := sort.Search(len(ctx.Templates), func(index int) bool {
+		return string(ctx.Templates[index].Type) >= ctx.Template
+	})
+
+	template := ctx.Templates[idx].Type
+	link := ctx.Templates[idx].Link
+
+	gitCmd := exec.Command("git", "clone", link, filepath.Join("libs", slug.Make(ctx.Name)))
+	_, err := gitCmd.Output()
+	if err != nil {
+		color.Error.Println("Unable to clone: ", template, " template type")
+		cobra.CheckErr(err)
+	}
+}
 
 func (ctx *CreateCommand) Package(cmd *cobra.Command) {}

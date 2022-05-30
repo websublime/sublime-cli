@@ -22,6 +22,7 @@ THE SOFTWARE.
 package core
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 )
@@ -48,6 +49,32 @@ type Sublime struct {
 	Packages  []Packages `json:"packages"`
 }
 
+type TsconfigBase struct {
+	CompilerOptions TsconfigCompilerOptions `json:"compilerOptions"`
+	References      []TsConfigReferences    `json:"references"`
+	Exclude         []string                `json:"exclude"`
+}
+
+type TsconfigCompilerOptions struct {
+	Target                  string `json:"target"`
+	UseDefineForClassFields bool   `json:"useDefineForClassFields"`
+	Module                  string `json:"module"`
+	ModuleResolution        string `json:"moduleResolution"`
+	Strict                  bool   `json:"strict"`
+	SourceMap               bool   `json:"sourceMap"`
+	ResolveJsonModule       bool   `json:"resolveJsonModule"`
+	EsModuleInterop         bool   `json:"esModuleInterop"`
+	Declaration             bool   `json:"declaration"`
+	SkipLibCheck            bool   `json:"skipLibCheck"`
+	Composite               bool   `json:"composite"`
+	Incremental             bool   `json:"incremental"`
+}
+
+type TsConfigReferences struct {
+	Path string `json:"path"`
+	Name string `json:"name"`
+}
+
 var sublime = NewSublime()
 
 func NewSublime() *Sublime {
@@ -71,4 +98,13 @@ func (ctx *Sublime) SetRoot(path string) {
 	} else {
 		ctx.Root = filepath.Join(dir, path)
 	}
+}
+
+func (ctx *Sublime) GetTsconfig() *TsconfigBase {
+	tsconfig := &TsconfigBase{}
+	data, _ := os.ReadFile(filepath.Join(ctx.Root, "tsconfig.base.json"))
+
+	json.Unmarshal(data, &tsconfig)
+
+	return tsconfig
 }
