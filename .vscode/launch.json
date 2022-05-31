@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["--root", "./ws-libs-ui"]
+            "args": ["--root", "./ui-libs", "create", "--name", "ui-header", "--type", "lib"]
         },
         {
             "name": "Attach to Process",

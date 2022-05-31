@@ -23,10 +23,10 @@ package cmd
 
 import (
 	"embed"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/gookit/color"
@@ -84,7 +84,7 @@ func init() {
 	createCmd.MarkFlagRequired("name")
 
 	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue)")
-	createCmd.MarkFlagRequired("template")
+	// createCmd.MarkFlagRequired("template")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
@@ -109,21 +109,29 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
 	libDirectory := filepath.Join(sublime.Root, "libs", slug.Make(ctx.Name))
 
-	idx := sort.Search(len(ctx.Templates), func(index int) bool {
-		return string(ctx.Templates[index].Type) >= ctx.Template
-	})
+	var template = ""
+	var link = ""
+	for i := range ctx.Templates {
+		if ctx.Templates[i].Type == ctx.Template {
+			template = ctx.Templates[i].Type
+			link = ctx.Templates[i].Link
+			break
+		}
+	}
 
-	template := ctx.Templates[idx].Type
-	link := ctx.Templates[idx].Link
+	if link == "" {
+		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or react")
+		cobra.CheckErr("Template error")
+	}
 
-	gitCmd := exec.Command("git", "clone", link, filepath.Join("libs", slug.Make(ctx.Name)))
+	gitCmd := exec.Command("git", "clone", link, libDirectory)
 	_, err := gitCmd.Output()
 	if err != nil {
 		color.Error.Println("Unable to clone: ", template, " template type")
 		cobra.CheckErr(err)
 	}
 
-	color.Info.Println("🛢 Template repo cloned. Initializing config files")
+	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
 	packageJson, _ := pkgTemplates.ReadFile("templates/lib-package.json")
 	apiExtractorJson, _ := pkgTemplates.ReadFile("templates/api-extractor-lib.json")
@@ -137,21 +145,120 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 		Name:      slug.Make(ctx.Name),
 	}, "{{", "}}"))
 
+	color.Info.Println("❤️‍🔥 Package json created and configured!")
+
 	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
 	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
 		Name: slug.Make(ctx.Name),
 	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Api extractor created and configured!")
 
 	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
 	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
 		Namespace: libNamespace,
 	}, "{{", "}}"))
 
+	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
+
 	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
 	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
 		Scope: sublime.Scope,
 		Name:  slug.Make(ctx.Name),
 	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Vite config created and configured!")
+
+	sublime.Packages = append(sublime.Packages, core.Packages{
+		Name:  slug.Make(ctx.Name),
+		Scope: sublime.Scope,
+		Type:  "lib",
+	})
+
+	data, _ := json.MarshalIndent(sublime, "", " ")
+
+	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
+
+	color.Info.Println("❤️‍🔥 Sublime json updated!")
+	os.RemoveAll(filepath.Join(libDirectory, ".git"))
 }
 
-func (ctx *CreateCommand) Package(cmd *cobra.Command) {}
+func (ctx *CreateCommand) Package(cmd *cobra.Command) {
+	sublime := core.GetSublime()
+
+	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
+	libDirectory := filepath.Join(sublime.Root, "packages", slug.Make(ctx.Name))
+
+	var template = ""
+	var link = ""
+	for i := range ctx.Templates {
+		if ctx.Templates[i].Type == ctx.Template {
+			template = ctx.Templates[i].Type
+			link = ctx.Templates[i].Link
+			break
+		}
+	}
+
+	if link == "" {
+		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or react")
+		cobra.CheckErr("Template error")
+	}
+
+	gitCmd := exec.Command("git", "clone", link, libDirectory)
+	_, err := gitCmd.Output()
+	if err != nil {
+		color.Error.Println("Unable to clone: ", template, " template type")
+		cobra.CheckErr(err)
+	}
+
+	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
+
+	packageJson, _ := pkgTemplates.ReadFile("templates/lib-package.json")
+	apiExtractorJson, _ := pkgTemplates.ReadFile("templates/api-extractor-lib.json")
+	tsConfigJson, _ := pkgTemplates.ReadFile("templates/tsconfig-lib.json")
+	viteConfigJson, _ := pkgTemplates.ReadFile("templates/vite-config-lit.json")
+
+	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
+	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
+		Namespace: libNamespace,
+		Repo:      sublime.Repo,
+		Name:      slug.Make(ctx.Name),
+	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Package json created and configured!")
+
+	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
+	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
+		Name: slug.Make(ctx.Name),
+	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Api extractor created and configured!")
+
+	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
+	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
+		Namespace: libNamespace,
+	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
+
+	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
+	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
+		Scope: sublime.Scope,
+		Name:  slug.Make(ctx.Name),
+	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Vite config created and configured!")
+
+	sublime.Packages = append(sublime.Packages, core.Packages{
+		Name:  slug.Make(ctx.Name),
+		Scope: sublime.Scope,
+		Type:  "pkg",
+	})
+
+	data, _ := json.MarshalIndent(sublime, "", " ")
+
+	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
+
+	color.Info.Println("❤️‍🔥 Sublime json updated!")
+	os.RemoveAll(filepath.Join(libDirectory, ".git"))
+}
