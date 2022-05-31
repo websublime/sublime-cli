@@ -29,14 +29,17 @@ import (
 type EmptyVars struct{}
 
 type PackageJsonVars struct {
+	Name      string
 	Namespace string
 	Repo      string
 	Username  string
 	Email     string
 }
 
-type VitePackageJsonVars struct {
+type ViteJsonVars struct {
 	Namespace string
+	Scope     string
+	Name      string
 }
 
 type SublimeJsonVars struct {
@@ -51,6 +54,14 @@ type ReleaseYamlVars struct {
 	Username string
 	Email    string
 	Scope    string
+}
+
+type ApiExtractorJsonVars struct {
+	Name string
+}
+
+type TsConfigJsonVars struct {
+	Namespace string
 }
 
 func process(t *template.Template, vars interface{}) string {

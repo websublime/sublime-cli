@@ -116,14 +116,14 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("❤️‍🔥 Package json created and configured!")
 
 	vitePkgJsonFile, _ := os.Create(filepath.Join(workspaceDir, "libs/vite/package.json"))
-	vitePkgJsonFile.WriteString(utils.ProcessString(string(vitePackageJson), &utils.VitePackageJsonVars{
+	vitePkgJsonFile.WriteString(utils.ProcessString(string(vitePackageJson), &utils.ViteJsonVars{
 		Namespace: viteNamespace,
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Vite plugin ready!")
 
 	tsConfigBaseFile, _ := os.Create(filepath.Join(workspaceDir, "tsconfig.base.json"))
-	tsConfigBaseFile.WriteString(utils.ProcessString(string(tsconfigBaseJson), &utils.VitePackageJsonVars{
+	tsConfigBaseFile.WriteString(utils.ProcessString(string(tsconfigBaseJson), &utils.TsConfigJsonVars{
 		Namespace: viteNamespace,
 	}, "{{", "}}"))
 

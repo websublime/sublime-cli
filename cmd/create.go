@@ -22,13 +22,18 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"embed"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/gosimple/slug"
 	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/utils"
 )
 
 type CreateCommand struct {
@@ -43,6 +48,9 @@ type LibTemplate struct {
 	Link string
 }
 
+//go:embed templates/*
+var pkgTemplates embed.FS
+
 func init() {
 	templates := []LibTemplate{
 		{
@@ -51,7 +59,7 @@ func init() {
 		},
 		{
 			Type: "lit",
-			Link: "",
+			Link: "git@github.com:websublime/sublime-lit-template.git",
 		},
 		{
 			Type: "solid",
@@ -75,7 +83,7 @@ func init() {
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
 	createCmd.MarkFlagRequired("name")
 
-	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit, react, solid, vue)")
+	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue)")
 	createCmd.MarkFlagRequired("template")
 }
 
@@ -96,6 +104,11 @@ func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 }
 
 func (ctx *CreateCommand) Library(cmd *cobra.Command) {
+	sublime := core.GetSublime()
+
+	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
+	libDirectory := filepath.Join(sublime.Root, "libs", slug.Make(ctx.Name))
+
 	idx := sort.Search(len(ctx.Templates), func(index int) bool {
 		return string(ctx.Templates[index].Type) >= ctx.Template
 	})
@@ -109,6 +122,36 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 		color.Error.Println("Unable to clone: ", template, " template type")
 		cobra.CheckErr(err)
 	}
+
+	color.Info.Println("🛢 Template repo cloned. Initializing config files")
+
+	packageJson, _ := pkgTemplates.ReadFile("templates/lib-package.json")
+	apiExtractorJson, _ := pkgTemplates.ReadFile("templates/api-extractor-lib.json")
+	tsConfigJson, _ := pkgTemplates.ReadFile("templates/tsconfig-lib.json")
+	viteConfigJson, _ := pkgTemplates.ReadFile("templates/vite-config-lit.json")
+
+	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
+	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
+		Namespace: libNamespace,
+		Repo:      sublime.Repo,
+		Name:      slug.Make(ctx.Name),
+	}, "{{", "}}"))
+
+	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
+	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
+		Name: slug.Make(ctx.Name),
+	}, "{{", "}}"))
+
+	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
+	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
+		Namespace: libNamespace,
+	}, "{{", "}}"))
+
+	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
+	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
+		Scope: sublime.Scope,
+		Name:  slug.Make(ctx.Name),
+	}, "{{", "}}"))
 }
 
 func (ctx *CreateCommand) Package(cmd *cobra.Command) {}

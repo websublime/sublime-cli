@@ -1,0 +1,62 @@
+{
+    "name": "{{ .Namespace }}",
+    "private": false,
+    "version": "0.0.4",
+    "source": "./src",
+    "scripts": {
+      "start": "vite --debug",
+      "build": "yarn dts && vite build --mode=production && yarn types",
+      "dts": "tsc --declaration --emitDeclarationOnly",
+      "types": "mkdir dist/docs && api-extractor run --local && rm -rf ./declarations",
+      "release": "yarn changeset publish"
+    },
+    "devDependencies": {
+      "@microsoft/api-documenter": "^7.17.15",
+      "@microsoft/api-extractor": "^7.24.1",
+      "@types/jest": "^27.0.1",
+      "@types/node": "^16.11.12",
+      "@typescript-eslint/eslint-plugin": "^5.14.0",
+      "@typescript-eslint/parser": "^5.14.0",
+      "eslint": "^8.13.0",
+      "eslint-config-prettier": "^8.5.0",
+      "eslint-plugin-import": "^2.25.4",
+      "eslint-plugin-prettier": "^4.0.0",
+      "eslint-plugin-sort-destructure-keys": "^1.4.0",
+      "eslint-plugin-unicorn": "^42.0.0",
+      "jest": "^26.1.0",
+      "prettier": "^2.5.1",
+      "rollup-plugin-postcss": "^4.0.2",
+      "rollup-plugin-postcss-lit": "^2.0.0",
+      "rollup-plugin-typescript2": "^0.31.2",
+      "sass": "^1.51.0",
+      "ts-jest": "^26.1.1",
+      "typescript": "^4.5.4",
+      "vite": "^2.8.0"
+    },
+    "dependencies": {
+      "lit": "^2.2.1"
+    },
+    "main": "./dist/{{ .Name }}.cjs.js",
+    "module": "./dist/{{ .Name }}.es.js",
+    "types": "./dist/@types/index.d.ts",
+    "exports": {
+      ".": {
+        "require": "./dist/{{ .Name }}.cjs.js",
+        "import": "./dist/{{ .Name }}.es.js"
+      }
+    },
+    "publishConfig": {
+      "registry": "https://npm.pkg.github.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "ssh://git@github.com:{{ .Repo }}.git",
+      "directory": "libs/{{ .Name }}"
+    },
+    "files": [
+      "dist/",
+      "./LICENSE.md",
+      "./README.md"
+    ]
+  }
+  
