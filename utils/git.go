@@ -23,8 +23,15 @@ func GetShortCommit(path string, hash string) (string, error) {
 	return string(output), err
 }
 
-func GetBeforeLastDiff(path string, searchFor string) (string, error) {
+func GetBeforeAndLastDiff(path string, searchFor string) (string, error) {
 	gitCmd := exec.Command("git", "-C", path, "diff", "--name-only", "HEAD^", "HEAD", "--", searchFor)
+	output, err := gitCmd.Output()
+
+	return string(output), err
+}
+
+func GetBeforeDiff(path string, searchFor string) (string, error) {
+	gitCmd := exec.Command("git", "-C", path, "diff", "--name-only", "HEAD^", "--", searchFor)
 	output, err := gitCmd.Output()
 
 	return string(output), err

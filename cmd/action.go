@@ -21,14 +21,99 @@ THE SOFTWARE.
 */
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 
-type ActionCommand struct{}
+	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/utils"
+)
 
-func NewActionCmd(cmdCreate *CreateCommand) *cobra.Command {
+type ActionCommand struct {
+	Kind   string
+	Client string
+}
+
+func init() {
+	cmd := &ActionCommand{}
+
+	actionCmd := NewActionCmd(cmd)
+	rootCmd.AddCommand(actionCmd)
+
+	actionCmd.Flags().StringVar(&cmd.Kind, "kind", "branch", "Kind of action (branch or tag)")
+	actionCmd.Flags().StringVar(&cmd.Client, "client", "supabase", "Client to use to upload to storage")
+}
+
+func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "action",
 		Short: "Run action",
-		Run:   func(cmd *cobra.Command, args []string) {},
+		Run: func(cmd *cobra.Command, args []string) {
+			if cmdAction.Kind == "tag" {
+				cmdAction.Tag(cmd)
+			}
+
+			if cmdAction.Kind == "branch" {
+				cmdAction.Branch((cmd))
+			}
+		},
 	}
 }
+
+func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
+	sublime := core.GetSublime()
+	dir, _ := os.Getwd()
+	pkgs := []core.Packages{}
+
+	count, _ := utils.GetCommitsCount(sublime.Root)
+	counter, err := strconv.ParseInt(strings.Replace(count, "\n", "", -1), 10, 0)
+	if err != nil || counter <= 0 {
+		cobra.CheckErr("No commits founded. Please commit first")
+	}
+
+	// lastCommit, _ := utils.GetLastCommit(sublime.Root)
+	// beforeCommit, _ := utils.GetBeforeLastCommit(sublime.Root)
+
+	for key := range sublime.Packages {
+		pkgName := sublime.Packages[key].Name
+		var output string = ""
+
+		if counter >= 2 {
+			output, _ = utils.GetBeforeAndLastDiff(dir, pkgName)
+		} else if counter == 1 {
+			output, _ = utils.GetBeforeDiff(dir, pkgName)
+		}
+
+		counted := strings.Count(output, "\n")
+
+		if counted > 0 {
+			pkgs = append(pkgs, sublime.Packages[key])
+		}
+	}
+
+	for key := range pkgs {
+		var libDir string
+		if pkgs[key].Type == "lib" {
+			libDir = "libs"
+		}
+
+		if pkgs[key].Type == "pkg" {
+			libDir = "packages"
+		}
+
+		distFolder := filepath.Join(sublime.Root, libDir, pkgs[key].Name, "dist")
+		files, err := utils.PathWalk(distFolder)
+		if err != nil {
+			cobra.CheckErr(fmt.Sprintf("Geting files from %s was error out", distFolder))
+		}
+
+		fmt.Println(files)
+		//TODO: upload files
+	}
+}
+
+func (ctx *ActionCommand) Tag(cmd *cobra.Command) {}

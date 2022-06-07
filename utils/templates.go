@@ -34,6 +34,7 @@ type PackageJsonVars struct {
 	Repo      string
 	Username  string
 	Email     string
+	Version   string
 }
 
 type ViteJsonVars struct {

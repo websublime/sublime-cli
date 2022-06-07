@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["--root", "./ui-libs", "create", "--name", "ui-header", "--type", "lib"]
+            "args": ["--root", "./ui-libs", "action", "--kind", "branch"]
         },
         {
             "name": "Attach to Process",
