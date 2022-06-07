@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -30,12 +31,16 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/core/clients"
 	"github.com/websublime/sublime-cli/utils"
 )
 
 type ActionCommand struct {
-	Kind   string
-	Client string
+	Kind    string
+	Client  string
+	Bucket  string
+	Key     string
+	BaseUrl string
 }
 
 func init() {
@@ -46,6 +51,15 @@ func init() {
 
 	actionCmd.Flags().StringVar(&cmd.Kind, "kind", "branch", "Kind of action (branch or tag)")
 	actionCmd.Flags().StringVar(&cmd.Client, "client", "supabase", "Client to use to upload to storage")
+
+	actionCmd.Flags().StringVar(&cmd.Bucket, "bucket", "", "Bucket storage name [REQUIRED]")
+	actionCmd.MarkFlagRequired("bucket")
+
+	actionCmd.Flags().StringVar(&cmd.Key, "key", "", "Api key [REQUIRED]")
+	actionCmd.MarkFlagRequired("key")
+
+	actionCmd.Flags().StringVar(&cmd.BaseUrl, "url", "", "Api base url [REQUIRED]")
+	actionCmd.MarkFlagRequired("url")
 }
 
 func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
@@ -75,8 +89,10 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 		cobra.CheckErr("No commits founded. Please commit first")
 	}
 
-	// lastCommit, _ := utils.GetLastCommit(sublime.Root)
+	lastCommit, _ := utils.GetLastCommit(sublime.Root)
 	// beforeCommit, _ := utils.GetBeforeLastCommit(sublime.Root)
+	hash, _ := utils.GetShortCommit(sublime.Root, lastCommit)
+	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key)
 
 	for key := range sublime.Packages {
 		pkgName := sublime.Packages[key].Name
@@ -105,14 +121,16 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 			libDir = "packages"
 		}
 
-		distFolder := filepath.Join(sublime.Root, libDir, pkgs[key].Name, "dist")
-		files, err := utils.PathWalk(distFolder)
-		if err != nil {
-			cobra.CheckErr(fmt.Sprintf("Geting files from %s was error out", distFolder))
-		}
+		libFolder := filepath.Join(sublime.Root, libDir, pkgs[key].Name)
+		distFolder := filepath.Join(libFolder, "dist")
 
-		fmt.Println(files)
-		//TODO: upload files
+		pkgJson := &utils.PackageJson{}
+		data, _ := os.ReadFile(filepath.Join(libFolder, "package.json"))
+		json.Unmarshal(data, &pkgJson)
+
+		destinationFolder := fmt.Sprintf("packages/%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
+
+		supabase.Upload(distFolder, destinationFolder)
 	}
 }
 
