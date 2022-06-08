@@ -29,9 +29,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/websublime/sublime-cli/utils"
 )
 
@@ -68,31 +68,33 @@ func (ctx *Supabase) Upload(bucket string, directory string, destination string)
 		if err != nil {
 			panic(fmt.Errorf("os.Open: %v", err))
 		}
-		fileContents, err := ioutil.ReadAll(file)
+		defer file.Close()
+
+		fileContents, err := ioutil.ReadFile(fileList[idx])
+		if err != nil {
+			panic(fmt.Errorf("Couldn't read file: %v", err))
+		}
+
+		fileExtension := filepath.Ext(fileList[idx])
+		mime := utils.GetMimeType(strings.TrimPrefix(fileExtension, "."))
 
 		stat, err := file.Stat()
-		file.Close()
+		if err != nil {
+			panic(fmt.Errorf("Couldn't get stat from file: %v", err))
+		}
 
 		payload := new(bytes.Buffer)
 		writer := multipart.NewWriter(payload)
 		part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+		if err != nil {
+			panic(fmt.Errorf("Couldn't create form for file: %v", err))
+		}
 
 		part.Write(fileContents)
 
 		writer.Close()
 
 		uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
-		mtype := mimetype.Detect(fileContents)
-		extension := mtype.Extension()
-		var mime = mtype.String()
-
-		if extension == ".cjs.js" {
-			mime = "application/javascript"
-		} else if extension == ".umd.js" {
-			mime = "application/javascript"
-		} else if extension == ".es.js" {
-			mime = "application/javascript"
-		}
 
 		req, _ := http.NewRequest("POST", uri, payload)
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.apiKey))
@@ -104,11 +106,17 @@ func (ctx *Supabase) Upload(bucket string, directory string, destination string)
 
 		// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
 		response, err := ctx.HTTPClient.Do(req)
+		if err != nil {
+			panic(fmt.Errorf("Couldn't upload file: %v", err))
+		}
 
 		defer response.Body.Close()
 
 		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			panic(fmt.Errorf("Couldn't read body response: %v", err))
+		}
 
-		fmt.Println(string(body), extension, mime)
+		fmt.Println(string(body))
 	}
 }

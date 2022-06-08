@@ -3,6 +3,7 @@ www/
 loader/
 temp/
 ui-libs/
+ws-libs-ui/
 
 *~
 *.sw[mnpcod]
