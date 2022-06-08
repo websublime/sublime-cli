@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"embed"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,9 +41,6 @@ type WorkSpaceCommand struct {
 	Username string
 	Email    string
 }
-
-//go:embed templates/*
-var templates embed.FS
 
 func init() {
 	cmd := &WorkSpaceCommand{}
@@ -99,11 +95,11 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 
 	color.Info.Println("🛢 Template repo cloned. Initializing config files")
 
-	packageJson, _ := templates.ReadFile("templates/workspace-package.json")
-	vitePackageJson, _ := templates.ReadFile("templates/vite-package.json")
-	tsconfigBaseJson, _ := templates.ReadFile("templates/tsconfig-base.json")
-	changesetConfigJson, _ := templates.ReadFile("templates/changeset-config.json")
-	sublimeConfigJson, _ := templates.ReadFile("templates/sublime.json")
+	packageJson, _ := FileTemplates.ReadFile("templates/workspace-package.json")
+	vitePackageJson, _ := FileTemplates.ReadFile("templates/vite-package.json")
+	tsconfigBaseJson, _ := FileTemplates.ReadFile("templates/tsconfig-base.json")
+	changesetConfigJson, _ := FileTemplates.ReadFile("templates/changeset-config.json")
+	sublimeConfigJson, _ := FileTemplates.ReadFile("templates/sublime.json")
 
 	pkgJsonFile, _ := os.Create(filepath.Join(workspaceDir, "package.json"))
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
@@ -151,7 +147,7 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 func (ctx *WorkSpaceCommand) Workflows() {
 	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
 
-	releaseYaml, _ := templates.ReadFile("templates/workflow-release.yaml")
+	releaseYaml, _ := FileTemplates.ReadFile("templates/workflow-release.yaml")
 
 	releaseYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/release.yaml"))
 	releaseYamlFile.WriteString(utils.ProcessString(string(releaseYaml), &utils.ReleaseYamlVars{

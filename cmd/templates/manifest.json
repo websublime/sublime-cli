@@ -1,0 +1,12 @@
+{
+    "name": "{{ .Name }}",
+    "version": "{{ .Version }}",
+    "scope": "{{ .Scope }}",
+    "repo": "{{ .Repo }}",
+    "scripts": {
+        "main": "{{ .Scripts.Main }}",
+        "esm": "{{ .Scripts.Esm }}"
+    },
+    "styles": {{ .Styles }},
+    "docs": "{{ .Docs }}"
+}

@@ -41,82 +41,76 @@ const (
 )
 
 type Supabase struct {
-	BaseURL string
-	// apiKey can be a client API key or a service key
-	apiKey     string
-	HTTPClient *http.Client
+	BaseURL     string
+	ApiKey      string
+	Environment string
+	HTTPClient  *http.Client
 }
 
-func NewSupabase(baseURL string, supabaseKey string) *Supabase {
+func NewSupabase(baseURL string, supabaseKey string, env string) *Supabase {
 	return &Supabase{
-		BaseURL: baseURL,
-		apiKey:  supabaseKey,
+		BaseURL:     baseURL,
+		ApiKey:      supabaseKey,
+		Environment: env,
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
 		},
 	}
 }
 
-func (ctx *Supabase) Upload(bucket string, directory string, destination string) {
-	fileList, err := utils.PathWalk(directory)
+func (ctx *Supabase) Upload(bucket string, filePath string, destination string) string {
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0755)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("os.Open: %v", err))
+	}
+	defer file.Close()
+
+	fileContents, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't read file: %v", err))
 	}
 
-	for idx := range fileList {
-		file, err := os.OpenFile(fileList[idx], os.O_RDWR, 0755)
-		if err != nil {
-			panic(fmt.Errorf("os.Open: %v", err))
-		}
-		defer file.Close()
+	fileExtension := filepath.Ext(filePath)
+	mime := utils.GetMimeType(strings.TrimPrefix(fileExtension, "."))
 
-		fileContents, err := ioutil.ReadFile(fileList[idx])
-		if err != nil {
-			panic(fmt.Errorf("Couldn't read file: %v", err))
-		}
-
-		fileExtension := filepath.Ext(fileList[idx])
-		mime := utils.GetMimeType(strings.TrimPrefix(fileExtension, "."))
-
-		stat, err := file.Stat()
-		if err != nil {
-			panic(fmt.Errorf("Couldn't get stat from file: %v", err))
-		}
-
-		payload := new(bytes.Buffer)
-		writer := multipart.NewWriter(payload)
-		part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
-		if err != nil {
-			panic(fmt.Errorf("Couldn't create form for file: %v", err))
-		}
-
-		part.Write(fileContents)
-
-		writer.Close()
-
-		uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
-
-		req, _ := http.NewRequest("POST", uri, payload)
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.apiKey))
-		req.Header.Add("apikey", ctx.apiKey)
-		req.Header.Add("x-upsert", "true")
-		req.Header.Add("x-cache-control", "3600")
-		req.Header.Add("Content-Type", mime)
-		req.Header.Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
-
-		// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-		response, err := ctx.HTTPClient.Do(req)
-		if err != nil {
-			panic(fmt.Errorf("Couldn't upload file: %v", err))
-		}
-
-		defer response.Body.Close()
-
-		body, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			panic(fmt.Errorf("Couldn't read body response: %v", err))
-		}
-
-		fmt.Println(string(body))
+	stat, err := file.Stat()
+	if err != nil {
+		panic(fmt.Errorf("Couldn't get stat from file: %v", err))
 	}
+
+	payload := new(bytes.Buffer)
+	writer := multipart.NewWriter(payload)
+	defer writer.Close()
+
+	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	if err != nil {
+		panic(fmt.Errorf("Couldn't create form for file: %v", err))
+	}
+
+	part.Write(fileContents)
+
+	uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
+
+	req, _ := http.NewRequest("POST", uri, payload)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("apikey", ctx.ApiKey)
+	req.Header.Add("x-upsert", "true")
+	//req.Header.Add("x-cache-control", "3600")
+	req.Header.Add("Content-Type", mime)
+	req.Header.Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+
+	// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't upload file: %v", err))
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't read body response: %v", err))
+	}
+
+	return string(body)
 }

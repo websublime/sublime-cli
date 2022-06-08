@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"embed"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -47,9 +46,6 @@ type LibTemplate struct {
 	Type string
 	Link string
 }
-
-//go:embed templates/*
-var pkgTemplates embed.FS
 
 func init() {
 	templates := []LibTemplate{
@@ -133,10 +129,10 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 
 	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
-	packageJson, _ := pkgTemplates.ReadFile("templates/lib-package.json")
-	apiExtractorJson, _ := pkgTemplates.ReadFile("templates/api-extractor-lib.json")
-	tsConfigJson, _ := pkgTemplates.ReadFile("templates/tsconfig-lib.json")
-	viteConfigJson, _ := pkgTemplates.ReadFile("templates/vite-config-lit.json")
+	packageJson, _ := FileTemplates.ReadFile("templates/lib-package.json")
+	apiExtractorJson, _ := FileTemplates.ReadFile("templates/api-extractor-lib.json")
+	tsConfigJson, _ := FileTemplates.ReadFile("templates/tsconfig-lib.json")
+	viteConfigJson, _ := FileTemplates.ReadFile("templates/vite-config-lit.json")
 
 	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
@@ -213,10 +209,10 @@ func (ctx *CreateCommand) Package(cmd *cobra.Command) {
 
 	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
-	packageJson, _ := pkgTemplates.ReadFile("templates/lib-package.json")
-	apiExtractorJson, _ := pkgTemplates.ReadFile("templates/api-extractor-lib.json")
-	tsConfigJson, _ := pkgTemplates.ReadFile("templates/tsconfig-lib.json")
-	viteConfigJson, _ := pkgTemplates.ReadFile("templates/vite-config-lit.json")
+	packageJson, _ := FileTemplates.ReadFile("templates/lib-package.json")
+	apiExtractorJson, _ := FileTemplates.ReadFile("templates/api-extractor-lib.json")
+	tsConfigJson, _ := FileTemplates.ReadFile("templates/tsconfig-lib.json")
+	viteConfigJson, _ := FileTemplates.ReadFile("templates/vite-config-lit.json")
 
 	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{

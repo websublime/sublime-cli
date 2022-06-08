@@ -4,6 +4,7 @@ loader/
 temp/
 ui-libs/
 ws-libs-ui/
+vendor/
 
 *~
 *.sw[mnpcod]

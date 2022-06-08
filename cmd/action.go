@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/websublime/sublime-cli/core"
 	"github.com/websublime/sublime-cli/core/clients"
@@ -36,11 +37,12 @@ import (
 )
 
 type ActionCommand struct {
-	Kind    string
-	Client  string
-	Bucket  string
-	Key     string
-	BaseUrl string
+	Kind        string
+	Client      string
+	Bucket      string
+	Key         string
+	BaseUrl     string
+	Environment string
 }
 
 func init() {
@@ -51,6 +53,7 @@ func init() {
 
 	actionCmd.Flags().StringVar(&cmd.Kind, "kind", "branch", "Kind of action (branch or tag)")
 	actionCmd.Flags().StringVar(&cmd.Client, "client", "supabase", "Client to use to upload to storage")
+	actionCmd.Flags().StringVar(&cmd.Environment, "env", "develop", "Environment")
 
 	actionCmd.Flags().StringVar(&cmd.Bucket, "bucket", "", "Bucket storage name [REQUIRED]")
 	actionCmd.MarkFlagRequired("bucket")
@@ -60,6 +63,31 @@ func init() {
 
 	actionCmd.Flags().StringVar(&cmd.BaseUrl, "url", "", "Api base url [REQUIRED]")
 	actionCmd.MarkFlagRequired("url")
+}
+
+func getSublimePackages(commitsCount int64) []core.Packages {
+	sublime := core.GetSublime()
+	dir, _ := os.Getwd()
+	pkgs := []core.Packages{}
+
+	for key := range sublime.Packages {
+		pkgName := sublime.Packages[key].Name
+		var output string = ""
+
+		if commitsCount >= 2 {
+			output, _ = utils.GetBeforeAndLastDiff(dir, pkgName)
+		} else if commitsCount == 1 {
+			output, _ = utils.GetBeforeDiff(dir, pkgName)
+		}
+
+		counted := strings.Count(output, "\n")
+
+		if counted > 0 {
+			pkgs = append(pkgs, sublime.Packages[key])
+		}
+	}
+
+	return pkgs
 }
 
 func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
@@ -79,9 +107,8 @@ func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
 }
 
 func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
+	color.Info.Println("🥼 Starting Feature Artifacts creation")
 	sublime := core.GetSublime()
-	dir, _ := os.Getwd()
-	pkgs := []core.Packages{}
 
 	count, _ := utils.GetCommitsCount(sublime.Root)
 	counter, err := strconv.ParseInt(count, 10, 0)
@@ -89,27 +116,16 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 		cobra.CheckErr("No commits founded. Please commit first")
 	}
 
+	color.Info.Println("🥼 Commits counted: ", counter)
+
 	lastCommit, _ := utils.GetLastCommit(sublime.Root)
 	// beforeCommit, _ := utils.GetBeforeLastCommit(sublime.Root)
 	hash, _ := utils.GetShortCommit(sublime.Root, lastCommit)
-	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key)
+	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
 
-	for key := range sublime.Packages {
-		pkgName := sublime.Packages[key].Name
-		var output string = ""
+	pkgs := getSublimePackages(counter)
 
-		if counter >= 2 {
-			output, _ = utils.GetBeforeAndLastDiff(dir, pkgName)
-		} else if counter == 1 {
-			output, _ = utils.GetBeforeDiff(dir, pkgName)
-		}
-
-		counted := strings.Count(output, "\n")
-
-		if counted > 0 {
-			pkgs = append(pkgs, sublime.Packages[key])
-		}
-	}
+	color.Info.Println("🥼 Founded", len(pkgs), "package to build artifact")
 
 	for key := range pkgs {
 		var libDir string
@@ -128,9 +144,46 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 		data, _ := os.ReadFile(filepath.Join(libFolder, "package.json"))
 		json.Unmarshal(data, &pkgJson)
 
+		color.Info.Println("🥼 Starting creating artifact for:", pkgJson.Name)
+
 		destinationFolder := fmt.Sprintf("%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
 
-		supabase.Upload(ctx.Bucket, distFolder, destinationFolder)
+		fileList, err := utils.PathWalk(distFolder)
+		if err != nil {
+			panic(err)
+		}
+
+		color.Info.Println("🥼 Founded", len(fileList), "files to be upload to assets bucket")
+
+		for idx := range fileList {
+			supabase.Upload(ctx.Bucket, fileList[idx], destinationFolder)
+		}
+
+		color.Info.Println("🥼 Files uploaded to bucket. Starting manifest creation")
+
+		// https://debvasmsyxrewpmqckdv.supabase.co/storage/v1/object/public/assets/utils@0.0.4-da00d90/ws-browser.mjs
+		manifestBaseLink := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", ctx.BaseUrl, ctx.Bucket, destinationFolder)
+
+		manifestJson, _ := FileTemplates.ReadFile("templates/manifest.json")
+		manifestFile := core.CreateManifest(manifestJson, core.Manifest{
+			Name:    pkgs[key].Name,
+			Scope:   sublime.Scope,
+			Repo:    sublime.Repo,
+			Version: pkgJson.Version,
+			Scripts: &core.ManifestScripts{
+				Main: fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(pkgJson.Main)),
+				Esm:  fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(pkgJson.Module)),
+			},
+			Styles: make([]string, 0),
+			Docs:   "",
+		})
+
+		manifestDestination := fmt.Sprintf("%s@%s-%s", pkgJson.Name, pkgJson.Version, hash)
+		supabase.Upload("manifests", manifestFile.Name(), manifestDestination)
+		manifestLink := fmt.Sprintf("%s/storage/v1/object/public/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
+		os.Remove(manifestFile.Name())
+
+		color.Info.Println("🥼 Manifest uploaded to:", manifestLink)
 	}
 }
 

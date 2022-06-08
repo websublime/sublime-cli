@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}",
             "args": [
                 "--root", 
-                "./ws-libs-ui", 
+                "./ui-libs", 
                 "action", 
                 "--kind", 
                 "branch", 
