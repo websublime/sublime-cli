@@ -84,7 +84,7 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 	pkgs := []core.Packages{}
 
 	count, _ := utils.GetCommitsCount(sublime.Root)
-	counter, err := strconv.ParseInt(strings.Replace(count, "\n", "", -1), 10, 0)
+	counter, err := strconv.ParseInt(count, 10, 0)
 	if err != nil || counter <= 0 {
 		cobra.CheckErr("No commits founded. Please commit first")
 	}
@@ -128,9 +128,9 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 		data, _ := os.ReadFile(filepath.Join(libFolder, "package.json"))
 		json.Unmarshal(data, &pkgJson)
 
-		destinationFolder := fmt.Sprintf("packages/%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
+		destinationFolder := fmt.Sprintf("%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
 
-		supabase.Upload(distFolder, destinationFolder)
+		supabase.Upload(ctx.Bucket, distFolder, destinationFolder)
 	}
 }
 

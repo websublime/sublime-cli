@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type PackageJson struct {
@@ -25,7 +26,8 @@ func PathWalk(root string) ([]string, error) {
 	var files []string
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
+
+		if !info.IsDir() && !strings.HasPrefix(info.Name(), ".") {
 			files = append(files, path)
 		}
 

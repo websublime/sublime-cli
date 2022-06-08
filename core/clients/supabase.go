@@ -28,8 +28,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/websublime/sublime-cli/utils"
 )
 
@@ -55,7 +57,7 @@ func NewSupabase(baseURL string, supabaseKey string) *Supabase {
 	}
 }
 
-func (ctx *Supabase) Upload(directory string, destination string) {
+func (ctx *Supabase) Upload(bucket string, directory string, destination string) {
 	fileList, err := utils.PathWalk(directory)
 	if err != nil {
 		panic(err)
@@ -71,12 +73,42 @@ func (ctx *Supabase) Upload(directory string, destination string) {
 		stat, err := file.Stat()
 		file.Close()
 
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("", file.Name())
+		payload := new(bytes.Buffer)
+		writer := multipart.NewWriter(payload)
+		part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
 
 		part.Write(fileContents)
+
+		writer.Close()
+
+		uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
+		mtype := mimetype.Detect(fileContents)
+		extension := mtype.Extension()
+		var mime = mtype.String()
+
+		if extension == ".cjs.js" {
+			mime = "application/javascript"
+		} else if extension == ".umd.js" {
+			mime = "application/javascript"
+		} else if extension == ".es.js" {
+			mime = "application/javascript"
+		}
+
+		req, _ := http.NewRequest("POST", uri, payload)
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.apiKey))
+		req.Header.Add("apikey", ctx.apiKey)
+		req.Header.Add("x-upsert", "true")
+		req.Header.Add("x-cache-control", "3600")
+		req.Header.Add("Content-Type", mime)
+		req.Header.Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+
 		// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
-		// ctx.HTTPClient.Do(func (request *http.Request) {})
+		response, err := ctx.HTTPClient.Do(req)
+
+		defer response.Body.Close()
+
+		body, err := ioutil.ReadAll(response.Body)
+
+		fmt.Println(string(body), extension, mime)
 	}
 }

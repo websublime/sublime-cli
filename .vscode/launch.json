@@ -10,7 +10,18 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": ["--root", "./ui-libs", "action", "--kind", "branch"]
+            "args": [
+                "--root", 
+                "./ui-libs", 
+                "action", 
+                "--kind", 
+                "branch", 
+                "--bucket", 
+                "assets", 
+                "--url",
+                "https://debvasmsyxrewpmqckdv.supabase.co",
+                "--key", 
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY0OTcxNjQ1OSwiZXhwIjoxOTY1MjkyNDU5fQ.Cpk3dsjv-hOrntBIS1j9kjQehjZHY-HlSPyh-KUV0gk"]
         },
         {
             "name": "Attach to Process",

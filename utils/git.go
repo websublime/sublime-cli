@@ -1,26 +1,29 @@
 package utils
 
-import "os/exec"
+import (
+	"os/exec"
+	"strings"
+)
 
 func GetLastCommit(path string) (string, error) {
 	gitCmd := exec.Command("git", "-C", path, "rev-parse", "head")
 	output, err := gitCmd.Output()
 
-	return string(output), err
+	return strings.Replace(string(output), "\n", "", -1), err
 }
 
 func GetBeforeLastCommit(path string) (string, error) {
 	gitCmd := exec.Command("git", "-C", path, "rev-parse", "head^")
 	output, err := gitCmd.Output()
 
-	return string(output), err
+	return strings.Replace(string(output), "\n", "", -1), err
 }
 
 func GetShortCommit(path string, hash string) (string, error) {
 	gitCmd := exec.Command("git", "-C", path, "rev-parse", "--short", hash)
 	output, err := gitCmd.Output()
 
-	return string(output), err
+	return strings.Replace(string(output), "\n", "", -1), err
 }
 
 func GetBeforeAndLastDiff(path string, searchFor string) (string, error) {
@@ -41,5 +44,5 @@ func GetCommitsCount(path string) (string, error) {
 	gitCmd := exec.Command("git", "-C", path, "rev-list", "--objects", "--all", "--count")
 	output, err := gitCmd.Output()
 
-	return string(output), err
+	return strings.Replace(string(output), "\n", "", -1), err
 }
