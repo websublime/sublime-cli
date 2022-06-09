@@ -42,8 +42,8 @@ var rootCmd = NewRootCmd()
 
 func NewRootCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "sublime-cli",
-		Short: "CLI tool to manage projects",
+		Use:   "sublime",
+		Short: "CLI tool to manage FE packages",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
 				cmd.Help()

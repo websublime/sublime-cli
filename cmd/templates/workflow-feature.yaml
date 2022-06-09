@@ -7,38 +7,11 @@ on:
 
 env:
   CI: true
-  NODE_ENV: "development"
+  NODE_ENV: "develop"
 
 jobs:
-  checks:
-    runs-on: ubuntu-latest
-    outputs:
-      hasUIHeader: ${{ steps.ui-header.outputs.header }}
-      hasUICommon: ${{ steps.ui-common.outputs.common }}
-      hasUIInspect: ${{ steps.ui-inspector.outputs.inspect }}
-      shortHash: ${{ steps.hash.outputs.hash }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - id: hash
-        run: echo "::set-output name=hash::$( git rev-parse --short ${{ github.sha }} || echo $? )"
-
-      - id: ui-header
-        run: echo "::set-output name=header::$( git diff --quiet --name-only ${{ github.event.before }} ${{ github.sha }} -- packages/ws-ui-header/; echo $? )"
-
-      - id: ui-common
-        run: echo "::set-output name=common::$( git diff --quiet --name-only ${{ github.event.before }} ${{ github.sha }} -- libs/ws-ui-common/; echo $? )"
-
-      - id: ui-inspector
-        run: echo "::set-output name=inspect::$( git diff --quiet --name-only ${{ github.event.before }} ${{ github.sha }} -- libs/ws-ui-inspector/; echo $? )"
-
   feat-artifacts:
     runs-on: ubuntu-latest
-    needs: checks
     steps:
 
       - name: Checkout
@@ -55,48 +28,18 @@ jobs:
         run: yarn
 
       - name: Build
-        env:
-          NODE_ENV: "development"
         run: yarn build
 
-      - name: Artifact ws-ui-common
-        if: needs.checks.outputs.hasUICommon == 1
+      - name: Artifacts
         env:
-          HOST: ${{ secrets.MINIO_HOST }}
-          KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-          SECRET: ${{ secrets.MINIO_SECRET_KEY }}
+          BUCKET: ${{ secrets.BUCKET }}
+          STORAGE_URL: ${{ secrets.STORAGE_URL }}
+          STORAGE_KEY: ${{ secrets.STORAGE_KEY }}
         run: |
-          PACKAGE_VERSION=$(cat libs/ws-ui-common/package.json | jq -r '.version')
-          wget https://dl.min.io/client/mc/release/linux-amd64/mc
-          chmod +x mc
-          ./mc alias set storage "$HOST" "$KEY" "$SECRET" --api S3v4
-          ./mc cp --recursive libs/ws-ui-common/dist/ storage/pkg/ws-ui-common@"$PACKAGE_VERSION"-${{ needs.checks.outputs.shortHash }}/
-
-      - name: Artifact ws-ui-inspector
-        if: needs.checks.outputs.hasUIInspect == 1
-        env:
-          HOST: ${{ secrets.MINIO_HOST }}
-          KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-          SECRET: ${{ secrets.MINIO_SECRET_KEY }}
-        run: |
-          PACKAGE_VERSION=$(cat libs/ws-ui-inspector/package.json | jq -r '.version')
-          wget https://dl.min.io/client/mc/release/linux-amd64/mc
-          chmod +x mc
-          ./mc alias set storage "$HOST" "$KEY" "$SECRET" --api S3v4
-          ./mc cp --recursive libs/ws-ui-inspector/dist/ storage/pkg/ws-ui-inspector@"$PACKAGE_VERSION"-${{ needs.checks.outputs.shortHash }}/
-
-      - name: Artifact ws-ui-header
-        if: needs.checks.outputs.hasUIHeader == 1
-        env:
-          HOST: ${{ secrets.MINIO_HOST }}
-          KEY: ${{ secrets.MINIO_ACCESS_KEY }}
-          SECRET: ${{ secrets.MINIO_SECRET_KEY }}
-        run: |
-          PACKAGE_VERSION=$(cat packages/ws-ui-header/package.json | jq -r '.version')
-          wget https://dl.min.io/client/mc/release/linux-amd64/mc
-          chmod +x mc
-          ./mc alias set storage "$HOST" "$KEY" "$SECRET" --api S3v4
-          ./mc cp --recursive packages/ws-ui-header/dist/ storage/pkg/ws-ui-header@"$PACKAGE_VERSION"-${{ needs.checks.outputs.shortHash }}/
+          wget https://github.com/websublime/sublime-cli/releases/download/v0.0.1/sublime-v0.0.1-linux-amd64.tar.gz
+          tar -xf sublime-v0.0.1-linux-amd64.tar.gz sublime
+          chmod +x sublime
+          ./sublime action --kind branch --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV"
 
 #      - name: Supabase artifacts
 #        if: contains(steps.file_changes.outputs.files , 'ws-ui-header/')
