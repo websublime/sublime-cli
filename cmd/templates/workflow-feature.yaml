@@ -42,7 +42,6 @@ jobs:
           ./sublime action --kind branch --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV"
 
 #      - name: Supabase artifacts
-#        if: contains(steps.file_changes.outputs.files , 'ws-ui-header/')
 #        uses: websublime/supabase-assets@v0.0.5
 #        with:
 #          url: ${{ secrets.SUPABASE_URL }}
