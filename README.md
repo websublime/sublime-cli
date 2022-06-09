@@ -5,7 +5,7 @@
   <img style="display: inline; margin: 0 6px" alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/websublime/sublime-cli?style=flat-square">
   <img style="display: inline; margin: 0 6px" alt="GitHub" src="https://img.shields.io/github/license/websublime/sublime-cli?style=flat-square">
   <img style="display: inline; margin: 0 6px" alt="PRS" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square">
-  <img style="display: inline; margin: 0 6px" alt="CI" src="https://github.com/websublime/sublime-cli/actions/workflows/main-build.yml/badge.svg?branch=main">
+  <img style="display: inline; margin: 0 6px" alt="CI" src="https://github.com/websublime/sublime-cli/actions/workflows/release.yml/badge.svg?branch=main">
 </p>
 
 <p align="center">
@@ -80,7 +80,7 @@ Creating a library or package is on the same command, only parameter changes
 | --type | Defines the type, supported are: lib or pkg |
 | --template | Template to use for your lib/pkg (current only lit but will have solid, vue, react, typescript only) |
 
-Global parameters, can be used with any command before calling the command itself. There are tow global parameters:
+Global parameters, can be used with any command before calling the command itself. There are two global parameters:
 
 | Parameter | Description |
 |---|---|
