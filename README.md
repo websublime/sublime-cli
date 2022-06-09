@@ -122,6 +122,8 @@ For now only Supabase storage is supported.
 
 [(Back to top)](#table-of-contents)
 
+**Mandatory dependencies: NodeJS >= 16 and Yarn**
+
 Download the suitable binary for your OS from the list [here](https://github.com/websublime/sublime-cli/releases) and install it. Make sure to make executable with chmod +x.
 
 In your github repo you will need to setup the following secrets:

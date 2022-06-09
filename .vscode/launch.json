@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Package",
+            "name": "Launch Action",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -21,14 +21,28 @@
                 "--url",
                 "https://debvasmsyxrewpmqckdv.supabase.co",
                 "--key", 
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY0OTcxNjQ1OSwiZXhwIjoxOTY1MjkyNDU5fQ.Cpk3dsjv-hOrntBIS1j9kjQehjZHY-HlSPyh-KUV0gk"]
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY0OTcxNjQ1OSwiZXhwIjoxOTY1MjkyNDU5fQ.Cpk3dsjv-hOrntBIS1j9kjQehjZHY-HlSPyh-KUV0gk"
+            ]
         },
         {
-            "name": "Attach to Process",
+            "name": "Launch Workspace",
             "type": "go",
-            "request": "attach",
-            "mode": "local",
-            "processId": 0
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "workspace",
+                "--name", 
+                "ui-libs", 
+                "--scope", 
+                "@ws", 
+                "--username", 
+                "miguelramos", 
+                "--email", 
+                "miguel@websublime.dev",
+                "--repo",
+                "websublime/ws-ui-libs", 
+            ]
         }
     ]
 }

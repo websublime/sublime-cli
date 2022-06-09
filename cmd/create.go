@@ -294,6 +294,7 @@ func (ctx *CreateCommand) YarnLink() {
 
 	if err != nil {
 		color.Error.Println("Yarn wasn't installed on", workspaceDir, ". Please do it manually")
+		color.Error.Println("Yarn error:", err.Error())
 	}
 
 	color.Success.Println("✅ Your app is updated. Yarn performed link on packages.")
