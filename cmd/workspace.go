@@ -148,6 +148,8 @@ func (ctx *WorkSpaceCommand) Workflows() {
 	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
 
 	releaseYaml, _ := FileTemplates.ReadFile("templates/workflow-release.yaml")
+	featureYaml, _ := FileTemplates.ReadFile("templates/workflow-feature.yaml")
+	artifactYaml, _ := FileTemplates.ReadFile("templates/workflow-artifact.yaml")
 
 	releaseYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/release.yaml"))
 	releaseYamlFile.WriteString(utils.ProcessString(string(releaseYaml), &utils.ReleaseYamlVars{
@@ -155,6 +157,12 @@ func (ctx *WorkSpaceCommand) Workflows() {
 		Email:    ctx.Email,
 		Scope:    ctx.Scope,
 	}, "[[", "]]"))
+
+	featureYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/feature.yaml"))
+	featureYamlFile.WriteString(utils.ProcessString(string(featureYaml), &utils.EmptyVars{}, "[[", "]]"))
+
+	artifactYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/artifact.yaml"))
+	artifactYamlFile.WriteString(utils.ProcessString(string(artifactYaml), &utils.EmptyVars{}, "[[", "]]"))
 
 	color.Info.Println("❤️‍🔥 Github action release created!")
 
