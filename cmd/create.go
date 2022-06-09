@@ -95,6 +95,8 @@ func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 			if cmdCreate.Type == "pkg" {
 				cmdCreate.Package((cmd))
 			}
+
+			cmdCreate.YarnLink()
 		},
 	}
 }
@@ -283,4 +285,16 @@ func (ctx *CreateCommand) Package(cmd *cobra.Command) {
 	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
 
 	os.RemoveAll(filepath.Join(libDirectory, ".git"))
+}
+
+func (ctx *CreateCommand) YarnLink() {
+	workspaceDir := core.GetSublime().Root
+
+	_, err := utils.YarnInstall(workspaceDir)
+
+	if err != nil {
+		color.Error.Println("Yarn wasn't installed on", workspaceDir, ". Please do it manually")
+	}
+
+	color.Success.Println("✅ Your app is updated. Yarn performed link on packages.")
 }

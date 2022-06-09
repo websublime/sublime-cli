@@ -47,6 +47,8 @@ Flags:
 Use "sublime [command] --help" for more information about a command.
 ```
 
+## Create workspace
+
 First let's start to create a workspace monorepo. The creation of the workspace will need some parameters to fullfill package.json needs.
 
 ```bash
@@ -68,6 +70,8 @@ Now inside your workspace let's create a library or a package.
 - Library, could be something that you want to share thru your packages
 - Packages, independents lit components for your micro frontends
 
+## Create package/lib
+
 Creating a library or package is on the same command, only parameter changes
 
 ```bash
@@ -88,6 +92,31 @@ Global parameters, can be used with any command before calling the command itsel
 | --config | The .sublime.json config file |
 
 If you run the cli from inside your workspace folder this para meters are resolved.
+
+## Perform github action
+
+Two predefined actions were created when you created an workspace. This actions will trigger based on:
+- Branch name as: feat/...
+- Tag creation
+
+Also there one release that will put as npm package on github to be consume as that if you need.
+
+The branch will create a snapshot artifact to be use for development needs. On tag will create the artifact for production.
+Example of what runs on github action.
+
+```bash
+> sublime action --kind branch --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV"
+```
+
+| Parameter | Description |
+|---|---|
+| --kind | Kind is: branch or tag making the diference for prod or dev |
+| --bucket | Storage bucket name to put assets from dist |
+| --url | Storage base url |
+| --key | Storage api key |
+| --env | Environment in which you are right now (dev, prod) |
+
+For now only Supabase storage is supported.
 
 # Installation
 
