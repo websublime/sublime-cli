@@ -71,6 +71,7 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 			cmdWsp.Run(cmd)
 			cmdWsp.Workflows()
 			cmdWsp.InitGit()
+			cmdWsp.InitYarn()
 		},
 	}
 }
@@ -184,5 +185,16 @@ func (ctx *WorkSpaceCommand) InitGit() {
 		color.Error.Println("Git wasn't enabled on", workspaceDir, ". Please do it manually")
 	}
 
-	color.Success.Println("✅ Your app is initialized. Please go into the directory an run: yarn install .")
+}
+
+func (ctx *WorkSpaceCommand) InitYarn() {
+	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
+
+	_, err := utils.YarnInstall(workspaceDir)
+
+	if err != nil {
+		color.Error.Println("Yarn wasn't installed on", workspaceDir, ". Please do it manually")
+	}
+
+	color.Success.Println("✅ Your app is initialized. Create your first lib or package.")
 }
