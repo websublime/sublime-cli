@@ -70,6 +70,7 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdWsp.Run(cmd)
 			cmdWsp.Workflows()
+			cmdWsp.InitGit()
 		},
 	}
 }
@@ -169,6 +170,19 @@ func (ctx *WorkSpaceCommand) Workflows() {
 	artifactYamlFile.WriteString(utils.ProcessString(string(artifactYaml), &utils.EmptyVars{}, "[[", "]]"))
 
 	color.Info.Println("❤️‍🔥 Github action artifact created!")
+}
+
+func (ctx *WorkSpaceCommand) InitGit() {
+	color.Info.Println("❤️‍🔥 Init git on workspace")
+
+	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
+
+	os.RemoveAll(filepath.Join(workspaceDir, ".git"))
+	_, err := utils.InitGit(workspaceDir)
+
+	if err != nil {
+		color.Error.Println("Git wasn't enabled on", workspaceDir, ". Please do it manually")
+	}
 
 	color.Success.Println("✅ Your app is initialized. Please go into the directory an run: yarn install .")
 }

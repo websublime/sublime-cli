@@ -26,6 +26,13 @@ import (
 	"strings"
 )
 
+func InitGit(path string) (string, error) {
+	gitCmd := exec.Command("git", "-C", path, "init")
+	output, err := gitCmd.Output()
+
+	return strings.Replace(string(output), "\n", "", -1), err
+}
+
 func GetLastCommit(path string) (string, error) {
 	gitCmd := exec.Command("git", "-C", path, "rev-parse", "head")
 	output, err := gitCmd.Output()

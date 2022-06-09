@@ -176,6 +176,19 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
 
 	color.Info.Println("❤️‍🔥 Sublime json updated!")
+
+	tsConfigBase := sublime.GetTsconfig()
+
+	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
+		Path: filepath.Join("./libs", slug.Make(ctx.Name)),
+		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
+	})
+
+	tsconfig, _ := json.MarshalIndent(tsConfigBase, "", " ")
+	os.WriteFile(filepath.Join(sublime.Root, "tsconfig.base.json"), tsconfig, 0644)
+
+	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
+
 	os.RemoveAll(filepath.Join(libDirectory, ".git"))
 }
 
@@ -256,5 +269,18 @@ func (ctx *CreateCommand) Package(cmd *cobra.Command) {
 	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
 
 	color.Info.Println("❤️‍🔥 Sublime json updated!")
+
+	tsConfigBase := sublime.GetTsconfig()
+
+	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
+		Path: filepath.Join("./packages", slug.Make(ctx.Name)),
+		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
+	})
+
+	tsconfig, _ := json.MarshalIndent(tsConfigBase, "", " ")
+	os.WriteFile(filepath.Join(sublime.Root, "tsconfig.base.json"), tsconfig, 0644)
+
+	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
+
 	os.RemoveAll(filepath.Join(libDirectory, ".git"))
 }
