@@ -158,13 +158,17 @@ func (ctx *WorkSpaceCommand) Workflows() {
 		Scope:    ctx.Scope,
 	}, "[[", "]]"))
 
+	color.Info.Println("❤️‍🔥 Github action release created!")
+
 	featureYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/feature.yaml"))
 	featureYamlFile.WriteString(utils.ProcessString(string(featureYaml), &utils.EmptyVars{}, "[[", "]]"))
+
+	color.Info.Println("❤️‍🔥 Github action feature created!")
 
 	artifactYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/artifact.yaml"))
 	artifactYamlFile.WriteString(utils.ProcessString(string(artifactYaml), &utils.EmptyVars{}, "[[", "]]"))
 
-	color.Info.Println("❤️‍🔥 Github action release created!")
+	color.Info.Println("❤️‍🔥 Github action artifact created!")
 
 	color.Success.Println("✅ Your app is initialized. Please go into the directory an run: yarn install .")
 }

@@ -94,18 +94,12 @@ func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
 		Use:   "action",
 		Short: "Create artifacts on github actions",
 		Run: func(cmd *cobra.Command, args []string) {
-			if cmdAction.Kind == "tag" {
-				cmdAction.Tag(cmd)
-			}
-
-			if cmdAction.Kind == "branch" {
-				cmdAction.Branch((cmd))
-			}
+			cmdAction.ReleaseArtifact(cmd)
 		},
 	}
 }
 
-func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
+func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 	color.Info.Println("🥼 Starting Feature Artifacts creation")
 	sublime := core.GetSublime()
 
@@ -149,7 +143,12 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 
 		color.Info.Println("🥼 Starting creating artifact for:", pkgJson.Name)
 
-		destinationFolder := fmt.Sprintf("%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
+		var destinationFolder = ""
+		if ctx.Kind == "branch" {
+			destinationFolder = fmt.Sprintf("%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
+		} else {
+			destinationFolder = fmt.Sprintf("%s@%s", pkgs[key].Name, pkgJson.Version)
+		}
 
 		fileList, err := utils.PathWalk(distFolder)
 		if err != nil {
@@ -181,7 +180,13 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 			Docs:   "",
 		})
 
-		manifestDestination := fmt.Sprintf("%s@%s-%s", pkgJson.Name, pkgJson.Version, hash)
+		var manifestDestination = ""
+		if ctx.Kind == "branch" {
+			manifestDestination = fmt.Sprintf("%s@%s-%s", pkgJson.Name, pkgJson.Version, hash)
+		} else {
+			manifestDestination = fmt.Sprintf("%s@%s", pkgJson.Name, pkgJson.Version)
+		}
+
 		supabase.Upload("manifests", manifestFile.Name(), manifestDestination)
 		manifestLink := fmt.Sprintf("%s/storage/v1/object/public/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
 		os.Remove(manifestFile.Name())
@@ -189,5 +194,3 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 		color.Info.Println("🥼 Manifest uploaded to:", manifestLink)
 	}
 }
-
-func (ctx *ActionCommand) Tag(cmd *cobra.Command) {}
