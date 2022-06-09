@@ -86,7 +86,7 @@ func init() {
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
-		Short: "Create libs or packages",
+		Short: "Create libs or packages from lit, solid, vue or react",
 		Run: func(cmd *cobra.Command, args []string) {
 			if cmdCreate.Type == "lib" {
 				cmdCreate.Library(cmd)

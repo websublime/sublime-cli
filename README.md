@@ -47,18 +47,42 @@ Flags:
 Use "sublime [command] --help" for more information about a command.
 ```
 
-## Workspace
+First let's start to create a workspace monorepo. The creation of the workspace will need some parameters to fullfill package.json needs.
 
-go run main.go workspace --name ws-libs-ui --scope @ws --repo sublime/ws-libs-ui --username miguelramos --email miguel@websublime.dev
+```bash
+> sublime workspace --name ws-libs-ui --scope @ws --repo sublime/ws-libs-ui --username miguelramos --email miguel@websublime.dev
+```
 
-## Lib or Pkg
+| Parameter | Description |
+|---|---|
+| --name | This will be the folder name for creating workspace |
+| --scope | This is the scope(organization) prefix namespace |
+| --repo | This is mandatory short github repo name |
+| --username | This will be used on package.json definitions |
+| --email | Same porpose as username |
 
-go run main.go --root ws-libs-ui/ create --name utils --type lib --template lit
+After the creation of your workspace just get into the workspace folder and run yarn.
+
+Now inside your workspace let's create a library or a package.
+
+- Library, could be something that you want to share thru your packages
+- Packages, independents lit components for your micro frontends
+
+Creating a library or package is on the same command, only parameter changes
+
+```bash
+> sublime create --name utils --type lib --template lit
+```
+
+| Parameter | Description |
+|---|---|
+| --name | This will be the folder name for creating lib or pkg, also will be prepend with scope for packing name |
+| --type | Defines the type, supported are: lib or pkg |
+| --template | Template to use for your lib/pkg (current only lit but will have solid, vue, react, typescript only) |
 
 # Installation
 
 [(Back to top)](#table-of-contents)
-
 
 # Contributing
 

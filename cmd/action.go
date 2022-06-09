@@ -93,7 +93,7 @@ func getSublimePackages(commitsCount int64) []core.Packages {
 func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "action",
-		Short: "Run action",
+		Short: "Create artifacts on github actions",
 		Run: func(cmd *cobra.Command, args []string) {
 			if cmdAction.Kind == "tag" {
 				cmdAction.Tag(cmd)
