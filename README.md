@@ -80,9 +80,20 @@ Creating a library or package is on the same command, only parameter changes
 | --type | Defines the type, supported are: lib or pkg |
 | --template | Template to use for your lib/pkg (current only lit but will have solid, vue, react, typescript only) |
 
+Global parameters, can be used with any command before calling the command itself. There are tow global parameters:
+
+| Parameter | Description |
+|---|---|
+| --root | The root folder of your workspace |
+| --config | The .sublime.json config file |
+
+If you run the cli from inside your workspace folder this para meters are resolved.
+
 # Installation
 
 [(Back to top)](#table-of-contents)
+
+Download the suitable binary for your OS from the list [here](https://github.com/websublime/sublime-cli/releases) and install it. Make sure to make executable with chmod +x.
 
 In your github repo you will need to setup the following secrets:
 
@@ -94,6 +105,13 @@ In your github repo you will need to setup the following secrets:
 | STORAGE_KEY | Storage api secret key |
 
 This will be used on github actions to create npm deploys, artifacts uploads and releases.
+
+For OSX you will need to allow it to be executed, because it is not signed as a trusted/signed user.
+
+Also current all artifacts are upload to supabase storage, so you need to create two buckets there:
+
+- One will be used to deploy all dist assets on it
+- Second create a bucket with the name "manifests", where this will have info about wich package or lib you release from github actions. This manifest file can be used to serve the main scripts for your system.
 
 # Contributing
 

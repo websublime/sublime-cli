@@ -67,7 +67,6 @@ func init() {
 
 func getSublimePackages(commitsCount int64) []core.Packages {
 	sublime := core.GetSublime()
-	dir, _ := os.Getwd()
 	pkgs := []core.Packages{}
 
 	for key := range sublime.Packages {
@@ -75,9 +74,9 @@ func getSublimePackages(commitsCount int64) []core.Packages {
 		var output string = ""
 
 		if commitsCount >= 2 {
-			output, _ = utils.GetBeforeAndLastDiff(dir, pkgName)
+			output, _ = utils.GetBeforeAndLastDiff(sublime.Root, pkgName)
 		} else if commitsCount == 1 {
-			output, _ = utils.GetBeforeDiff(dir, pkgName)
+			output, _ = utils.GetBeforeDiff(sublime.Root, pkgName)
 		}
 
 		counted := strings.Count(output, "\n")
@@ -125,7 +124,11 @@ func (ctx *ActionCommand) Branch(cmd *cobra.Command) {
 
 	pkgs := getSublimePackages(counter)
 
-	color.Info.Println("🥼 Founded", len(pkgs), "package to build artifact")
+	if len(pkgs) <= 0 {
+		color.Info.Println("🥼 No packages founded to build artifacts")
+	} else {
+		color.Info.Println("🥼 Founded", len(pkgs), "package to build artifacts")
+	}
 
 	for key := range pkgs {
 		var libDir string
