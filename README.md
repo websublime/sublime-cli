@@ -12,7 +12,7 @@
   <img style="display: inline; margin: 0 6px" alt="OSS" src="https://forthebadge.com/images/badges/open-source.svg">
 </p>
 
-<p align="center">❄️ FE CLI</p>
+<p align="center">❄️ SB-CLI</p>
 
 Sublime CLI is a tool to create a frontend workspace, libs or packages to distribute as npm or global scripts to use on your page or micro frontend architecture. It is based in vite to build your dists and also it create artifacts to publish on Supabase storage. Current we only support lit and github actions.
 
@@ -83,6 +83,17 @@ Creating a library or package is on the same command, only parameter changes
 # Installation
 
 [(Back to top)](#table-of-contents)
+
+In your github repo you will need to setup the following secrets:
+
+| Parameter | Description |
+|---|---|
+| GH_TOKEN | Github token |
+| BUCKET | Storage bucket name |
+| STORAGE_URL | Base Storage url |
+| STORAGE_KEY | Storage api secret key |
+
+This will be used on github actions to create npm deploys, artifacts uploads and releases.
 
 # Contributing
 
