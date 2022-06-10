@@ -84,7 +84,7 @@ func init() {
 	createCmd.MarkFlagRequired("name")
 
 	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue, typescript)")
-	// createCmd.MarkFlagRequired("template")
+	createCmd.MarkFlagRequired("template")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
