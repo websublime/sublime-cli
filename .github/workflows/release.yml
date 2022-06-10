@@ -37,4 +37,4 @@ jobs:
         project_path: "./"
         binary_name: "sublime"
         extra_files: LICENSE README.md
-        build_command: make build
+        ldflags: -X "github.com/websublime/sublime-cli/cmd.Version=${{ env.APP_VERSION }}" -X "github.com/websublime/sublime-cli/cmd.BuildTime=${{ env.BUILD_TIME }}" 
