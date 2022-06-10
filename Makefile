@@ -11,7 +11,7 @@ WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
 NOW = $(shell date +'%Y-%m-%d_%T')
-VERSION = $(shell git describe --tags $(git rev-list --tags --max-count=1)) 
+VERSION = $(shell git describe --tags $(shell git rev-list --tags --max-count=1)) 
 
 .PHONY: all test build vendor
 
