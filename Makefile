@@ -10,6 +10,8 @@ YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
+NOW = $(shell date +'%Y-%m-%d_%T')
+VERSION = $(shell git describe --tags $(git rev-list --tags --max-count=1)) 
 
 .PHONY: all test build vendor
 
@@ -18,7 +20,8 @@ all: help
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	mkdir -p out/bin
-	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) .
+	echo $(VERSION) - $(NOW)
+	GO111MODULE=on $(GOCMD) build -v -ldflags="-X github.com/websublime/sublime-cli/cmd.Version=${VERSION} -X github.com/websublime/sublime-cli/cmd.BuildTime=${NOW}" -mod vendor -o out/bin/$(BINARY_NAME) .
 
 clean: ## Remove build related file
 	rm -fr ./bin
@@ -27,10 +30,6 @@ clean: ## Remove build related file
 
 vendor: ## Copy of all packages needed to support builds and tests in the vendor directory
 	$(GOCMD) mod vendor
-
-watch: ## Run the code with cosmtrek/air to have automatic reload on changes
-	$(eval PACKAGE_NAME=$(shell head -n 1 go.mod | cut -d ' ' -f2))
-	docker run -it --rm -w /go/src/$(PACKAGE_NAME) -v $(shell pwd):/go/src/$(PACKAGE_NAME) -p $(SERVICE_PORT):$(SERVICE_PORT) cosmtrek/air
 
 ## Test:
 test: ## Run the tests of the project
@@ -48,13 +47,6 @@ ifeq ($(EXPORT_RESULT), true)
 	GO111MODULE=off go get -u github.com/axw/gocov/gocov
 	gocov convert profile.cov | gocov-xml > coverage.xml
 endif
-
-## Lint:
-lint: lint-go ## Run all available linters
-
-lint-go: ## Use golintci-lint on your project
-	$(eval OUTPUT_OPTIONS = $(shell [ "${EXPORT_RESULT}" == "true" ] && echo "--out-format checkstyle ./... | tee /dev/tty > checkstyle-report.xml" || echo "" ))
-	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:latest-alpine golangci-lint run --deadline=65s $(OUTPUT_OPTIONS)
 
 ## Help:
 help: ## Show this help.

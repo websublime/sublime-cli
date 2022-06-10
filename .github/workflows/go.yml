@@ -18,6 +18,9 @@ jobs:
       with:
         go-version: 1.18
 
+    - name: Set APP_VERSION env
+      run: echo APP_VERSION=$(echo git describe --tags $(git rev-list --tags --max-count=1))
+
     - name: Vendor
       run: go mod vendor
 
