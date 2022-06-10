@@ -28,6 +28,10 @@ import (
 
 type EmptyVars struct{}
 
+type ArtifactsVars struct {
+	Version string
+}
+
 type PackageJsonVars struct {
 	Name      string
 	Namespace string
@@ -64,6 +68,7 @@ type ApiExtractorJsonVars struct {
 
 type TsConfigJsonVars struct {
 	Namespace string
+	Vite      string
 }
 
 func process(t *template.Template, vars interface{}) string {

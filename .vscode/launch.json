@@ -43,6 +43,24 @@
                 "--repo",
                 "websublime/ws-ui-libs", 
             ]
+        },
+        {
+            "name": "Launch Create",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--root", 
+                "./ui-libs",
+                "create",
+                "--name", 
+                "ui-bomb", 
+                "--type", 
+                "pkg", 
+                "--template", 
+                "lit" 
+            ]
         }
     ]
 }

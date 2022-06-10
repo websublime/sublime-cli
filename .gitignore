@@ -5,6 +5,7 @@ temp/
 ui-libs/
 ws-libs-ui/
 vendor/
+out/
 
 *~
 *.sw[mnpcod]

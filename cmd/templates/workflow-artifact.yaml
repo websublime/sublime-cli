@@ -35,7 +35,7 @@ jobs:
           STORAGE_URL: ${{ secrets.STORAGE_URL }}
           STORAGE_KEY: ${{ secrets.STORAGE_KEY }}
         run: |
-          wget https://github.com/websublime/sublime-cli/releases/download/v0.0.6/sublime-v0.0.6-linux-amd64.tar.gz
-          tar -xf sublime-v0.0.6-linux-amd64.tar.gz sublime
+          wget https://github.com/websublime/sublime-cli/releases/download/[[ .Version ]]/sublime-[[ .Version ]]-linux-amd64.tar.gz
+          tar -xf sublime-[[ .Version ]]-linux-amd64.tar.gz sublime
           chmod +x sublime
           ./sublime action --kind tag --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV"

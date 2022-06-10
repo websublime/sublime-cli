@@ -27,6 +27,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	Version   string = "v0.0.1"
+	BuildTime string = ""
+)
+
 func init() {
 	rootCmd.AddCommand(versionCmd)
 }
@@ -36,6 +41,6 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of sublime",
 	Long:  `All software has versions. This is Sublime's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Sublime CLI v0.0.1 -- HEAD")
+		fmt.Println("Sublime CLI", Version)
 	},
 }

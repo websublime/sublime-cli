@@ -92,24 +92,23 @@ func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 		Use:   "create",
 		Short: "Create libs or packages from lit, solid, vue or react",
 		Run: func(cmd *cobra.Command, args []string) {
-			if cmdCreate.Type == "lib" {
-				cmdCreate.Library(cmd)
-			}
-
-			if cmdCreate.Type == "pkg" {
-				cmdCreate.Package((cmd))
-			}
-
+			cmdCreate.CreatPackage((cmd))
 			cmdCreate.YarnLink()
 		},
 	}
 }
 
-func (ctx *CreateCommand) Library(cmd *cobra.Command) {
+func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	sublime := core.GetSublime()
+	var libType = "libs"
+
+	if ctx.Type == "pkg" {
+		libType = "packages"
+	}
 
 	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
-	libDirectory := filepath.Join(sublime.Root, "libs", slug.Make(ctx.Name))
+	libDirectory := filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
+	viteRel, _ := filepath.Rel(libDirectory, filepath.Join(sublime.Root, "libs/vite"))
 
 	var template = ""
 	var link = ""
@@ -122,7 +121,7 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 	}
 
 	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or react")
+		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue, react or typescript")
 		cobra.CheckErr("Template error")
 	}
 
@@ -160,6 +159,7 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
 	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
 		Namespace: libNamespace,
+		Vite:      viteRel,
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
@@ -175,7 +175,7 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 	sublime.Packages = append(sublime.Packages, core.Packages{
 		Name:  slug.Make(ctx.Name),
 		Scope: sublime.Scope,
-		Type:  "lib",
+		Type:  core.PackageType(ctx.Type),
 	})
 
 	data, _ := json.MarshalIndent(sublime, "", " ")
@@ -187,100 +187,7 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 	tsConfigBase := sublime.GetTsconfig()
 
 	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
-		Path: filepath.Join("./libs", slug.Make(ctx.Name)),
-		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
-	})
-
-	tsconfig, _ := json.MarshalIndent(tsConfigBase, "", " ")
-	os.WriteFile(filepath.Join(sublime.Root, "tsconfig.base.json"), tsconfig, 0644)
-
-	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
-
-	os.RemoveAll(filepath.Join(libDirectory, ".git"))
-}
-
-func (ctx *CreateCommand) Package(cmd *cobra.Command) {
-	sublime := core.GetSublime()
-
-	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
-	libDirectory := filepath.Join(sublime.Root, "packages", slug.Make(ctx.Name))
-
-	var template = ""
-	var link = ""
-	for i := range ctx.Templates {
-		if ctx.Templates[i].Type == ctx.Template {
-			template = ctx.Templates[i].Type
-			link = ctx.Templates[i].Link
-			break
-		}
-	}
-
-	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or react")
-		cobra.CheckErr("Template error")
-	}
-
-	gitCmd := exec.Command("git", "clone", link, libDirectory)
-	_, err := gitCmd.Output()
-	if err != nil {
-		color.Error.Println("Unable to clone: ", template, " template type")
-		cobra.CheckErr(err)
-	}
-
-	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
-
-	packageJson, _ := FileTemplates.ReadFile("templates/lib-package.json")
-	apiExtractorJson, _ := FileTemplates.ReadFile("templates/api-extractor-lib.json")
-	tsConfigJson, _ := FileTemplates.ReadFile("templates/tsconfig-lib.json")
-	viteConfigJson, _ := FileTemplates.ReadFile("templates/vite-config-lit.json")
-
-	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
-	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
-		Namespace: libNamespace,
-		Repo:      sublime.Repo,
-		Name:      slug.Make(ctx.Name),
-	}, "{{", "}}"))
-
-	color.Info.Println("❤️‍🔥 Package json created and configured!")
-
-	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
-	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
-		Name: slug.Make(ctx.Name),
-	}, "{{", "}}"))
-
-	color.Info.Println("❤️‍🔥 Api extractor created and configured!")
-
-	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
-	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
-		Namespace: libNamespace,
-	}, "{{", "}}"))
-
-	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
-
-	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
-	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
-		Scope: sublime.Scope,
-		Name:  slug.Make(ctx.Name),
-	}, "{{", "}}"))
-
-	color.Info.Println("❤️‍🔥 Vite config created and configured!")
-
-	sublime.Packages = append(sublime.Packages, core.Packages{
-		Name:  slug.Make(ctx.Name),
-		Scope: sublime.Scope,
-		Type:  "pkg",
-	})
-
-	data, _ := json.MarshalIndent(sublime, "", " ")
-
-	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
-
-	color.Info.Println("❤️‍🔥 Sublime json updated!")
-
-	tsConfigBase := sublime.GetTsconfig()
-
-	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
-		Path: filepath.Join("./packages", slug.Make(ctx.Name)),
+		Path: filepath.Join("./", libType, slug.Make(ctx.Name)),
 		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
 	})
 

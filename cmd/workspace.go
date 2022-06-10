@@ -163,12 +163,16 @@ func (ctx *WorkSpaceCommand) Workflows() {
 	color.Info.Println("❤️‍🔥 Github action release created!")
 
 	featureYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/feature.yaml"))
-	featureYamlFile.WriteString(utils.ProcessString(string(featureYaml), &utils.EmptyVars{}, "[[", "]]"))
+	featureYamlFile.WriteString(utils.ProcessString(string(featureYaml), &utils.ArtifactsVars{
+		Version: Version,
+	}, "[[", "]]"))
 
 	color.Info.Println("❤️‍🔥 Github action feature created!")
 
 	artifactYamlFile, _ := os.Create(filepath.Join(workspaceDir, ".github/workflows/artifact.yaml"))
-	artifactYamlFile.WriteString(utils.ProcessString(string(artifactYaml), &utils.EmptyVars{}, "[[", "]]"))
+	artifactYamlFile.WriteString(utils.ProcessString(string(artifactYaml), &utils.ArtifactsVars{
+		Version: Version,
+	}, "[[", "]]"))
 
 	color.Info.Println("❤️‍🔥 Github action artifact created!")
 }

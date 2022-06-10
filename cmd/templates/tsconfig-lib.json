@@ -33,7 +33,7 @@
     "extends": "../../tsconfig.base.json",
     "references": [
       {
-        "path": "../vite"
+        "path": "{{ .Vite }}"
       }
     ]
   }
