@@ -23,7 +23,8 @@ jobs:
     - name: Set APP_VERSION env
       run: |
         echo APP_VERSION=$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev ) >> ${GITHUB_ENV}
-        echo ${GITHUB_ENV}
+        echo $GITHUB_ENV
+        echo $APP_VERSION
 
     - name: Vendor
       run: go mod vendor
