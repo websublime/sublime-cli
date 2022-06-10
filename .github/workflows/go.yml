@@ -21,9 +21,10 @@ jobs:
         go-version: 1.18
 
     - name: Set Version
+      env:
+        RELEASE_VERSION: ${{github.ref_name}}
       run: |
-        echo RELEASE_VERSION=$(echo ${GITHUB_REF:10}) >> ${GITHUB_ENV}
-        echo ${{ env.RELEASE_VERSION }}
+        echo $RELEASE_VERSION
 
     - name: Vendor
       run: go mod vendor
