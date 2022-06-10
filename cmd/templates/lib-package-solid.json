@@ -16,6 +16,7 @@
       "solid-element": "^1.4.4",
       "solid-js": "^1.4.4",
       "solid-utils": "^0.8.1",
+      "vite-plugin-solid": "^2.2.6",
       "@microsoft/api-documenter": "^7.17.15",
       "@microsoft/api-extractor": "^7.24.1",
       "@types/jest": "^27.0.1",
