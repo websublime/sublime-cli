@@ -35,6 +35,7 @@ type PackageJsonVars struct {
 	Username  string
 	Email     string
 	Version   string
+	Scope     string
 }
 
 type ViteJsonVars struct {

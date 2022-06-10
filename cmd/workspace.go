@@ -188,6 +188,8 @@ func (ctx *WorkSpaceCommand) InitGit() {
 }
 
 func (ctx *WorkSpaceCommand) InitYarn() {
+	color.Info.Println("❤️‍🔥 Init yarn install on workspace")
+
 	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
 
 	_, err := utils.YarnInstall(workspaceDir)

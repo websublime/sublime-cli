@@ -65,6 +65,10 @@ func init() {
 			Type: "react",
 			Link: "",
 		},
+		{
+			Type: "typescript",
+			Link: "git@github.com:websublime/sublime-typescript-template.git",
+		},
 	}
 
 	cmd := &CreateCommand{
@@ -79,8 +83,8 @@ func init() {
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
 	createCmd.MarkFlagRequired("name")
 
-	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue)")
-	// createCmd.MarkFlagRequired("template")
+	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue, typescript)")
+	createCmd.MarkFlagRequired("template")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
@@ -141,6 +145,7 @@ func (ctx *CreateCommand) Library(cmd *cobra.Command) {
 		Namespace: libNamespace,
 		Repo:      sublime.Repo,
 		Name:      slug.Make(ctx.Name),
+		Scope:     sublime.Scope,
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Package json created and configured!")
@@ -288,6 +293,8 @@ func (ctx *CreateCommand) Package(cmd *cobra.Command) {
 }
 
 func (ctx *CreateCommand) YarnLink() {
+	color.Info.Println("❤️‍🔥 Init yarn link on workspace")
+
 	workspaceDir := core.GetSublime().Root
 
 	_, err := utils.YarnInstall(workspaceDir)

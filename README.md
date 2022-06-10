@@ -14,7 +14,7 @@
 
 <p align="center">❄️ SB-CLI</p>
 
-Sublime CLI is a tool to create a frontend workspace, libs or packages to distribute as npm or global scripts to use on your page or micro frontend architecture. It is based in vite to build your dists and also it create artifacts to publish on Supabase storage. Current we only support lit and github actions.
+Sublime CLI is a tool to create a frontend workspace, libs or packages to distribute as npm or global scripts to use on your page or micro frontend architecture. It is based in vite to build your dists and also it create artifacts to publish on Supabase storage. Current we only support github actions.
 
 # Table of contents
 
@@ -82,7 +82,9 @@ Creating a library or package is on the same command, only parameter changes
 |---|---|
 | --name | This will be the folder name for creating lib or pkg, also will be prepend with scope for packing name |
 | --type | Defines the type, supported are: lib or pkg |
-| --template | Template to use for your lib/pkg (current only lit but will have solid, vue, react, typescript only) |
+| --template | Template to use for your lib/pkg (lit, solid, vue, react, typescript) |
+
+**Current templates available: lit and typescript**
 
 Global parameters, can be used with any command before calling the command itself. There are two global parameters:
 
