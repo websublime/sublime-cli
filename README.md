@@ -84,7 +84,7 @@ Creating a library or package is on the same command, only parameter changes
 | --type | Defines the type, supported are: lib or pkg |
 | --template | Template to use for your lib/pkg (lit, solid, vue, react, typescript) |
 
-**Current templates available: lit and typescript**
+**Current templates available: lit, typescript, solid**
 
 Global parameters, can be used with any command before calling the command itself. There are two global parameters:
 
