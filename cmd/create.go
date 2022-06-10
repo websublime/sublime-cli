@@ -59,7 +59,7 @@ func init() {
 		},
 		{
 			Type: "solid",
-			Link: "",
+			Link: "git@github.com:websublime/sublime-solid-template.git",
 		},
 		{
 			Type: "react",
@@ -134,10 +134,24 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
-	packageJson, _ := FileTemplates.ReadFile("templates/lib-package.json")
+	var libPackageJson = "templates/lib-package.json"
+	var libTsconfigJson = "templates/tsconfig-lib.json"
+	var libViteConfigJson = "templates/vite-config-lit.json"
+
+	if ctx.Template == "solid" {
+		libPackageJson = "templates/lib-package-solid.json"
+		libTsconfigJson = "templates/tsconfig-lib-solid.json"
+		libViteConfigJson = "templates/vite-config-solid.json"
+	}
+
+	if ctx.Template == "typescript" {
+		libViteConfigJson = "templates/vite-config-typescript.json"
+	}
+
+	packageJson, _ := FileTemplates.ReadFile(libPackageJson)
 	apiExtractorJson, _ := FileTemplates.ReadFile("templates/api-extractor-lib.json")
-	tsConfigJson, _ := FileTemplates.ReadFile("templates/tsconfig-lib.json")
-	viteConfigJson, _ := FileTemplates.ReadFile("templates/vite-config-lit.json")
+	tsConfigJson, _ := FileTemplates.ReadFile(libTsconfigJson)
+	viteConfigJson, _ := FileTemplates.ReadFile(libViteConfigJson)
 
 	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
