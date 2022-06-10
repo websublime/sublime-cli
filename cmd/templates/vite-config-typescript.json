@@ -1,0 +1,47 @@
+/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable import/no-import-module-exports */
+import path from 'path';
+
+import { workspacesAlias } from '{{ .Scope }}/vite';
+import postcss from 'rollup-plugin-postcss';
+import { defineConfig } from 'vite';
+
+module.exports = defineConfig({
+  build: {
+    lib: {
+      entry: path.resolve(__dirname, 'src/index.ts'),
+      fileName: (format) => `{{ .Name }}.${format}.js`,
+      formats: ['es', 'cjs', 'umd'],
+      name: '{{ .Name }}'
+    },
+    polyfillDynamicImport: false,
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: [],
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {}
+      }
+    },
+    sourcemap: true,
+    target: 'modules'
+  },
+  css: {
+    preprocessorOptions: {
+      sass: {
+        includePaths: ['node_modules']
+      },
+      scss: {
+        includePaths: ['node_modules']
+      }
+    }
+  },
+  plugins: [
+    postcss({
+      inject: false
+    }),
+    workspacesAlias(['../../'], ['vite'])
+  ]
+});

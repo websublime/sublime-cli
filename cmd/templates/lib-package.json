@@ -11,6 +11,7 @@
       "release": "yarn changeset publish"
     },
     "devDependencies": {
+      "{{ .Scope }}/vite": "0.0.1",
       "@microsoft/api-documenter": "^7.17.15",
       "@microsoft/api-extractor": "^7.24.1",
       "@types/jest": "^27.0.1",

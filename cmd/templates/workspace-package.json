@@ -15,7 +15,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "yarn ui:vite:build && turbo run build",
+    "build": "turbo run build",
     "release": "yarn changeset publish"
   },
   "devDependencies": {
