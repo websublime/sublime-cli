@@ -79,7 +79,7 @@ func init() {
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
 	createCmd.MarkFlagRequired("name")
 
-	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue, typescript)")
+	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template: (lit, solid, vue, typescript)")
 	createCmd.MarkFlagRequired("template")
 }
 
@@ -117,7 +117,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	}
 
 	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue, react or typescript")
+		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or typescript")
 		cobra.CheckErr("Template error")
 	}
 
