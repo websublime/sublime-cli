@@ -51,7 +51,7 @@ func init() {
 	templates := []LibTemplate{
 		{
 			Type: "vue",
-			Link: "",
+			Link: "git@github.com:websublime/sublime-vue-template.git",
 		},
 		{
 			Type: "lit",
@@ -60,10 +60,6 @@ func init() {
 		{
 			Type: "solid",
 			Link: "git@github.com:websublime/sublime-solid-template.git",
-		},
-		{
-			Type: "react",
-			Link: "",
 		},
 		{
 			Type: "typescript",
@@ -142,6 +138,12 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		libPackageJson = "templates/lib-package-solid.json"
 		libTsconfigJson = "templates/tsconfig-lib-solid.json"
 		libViteConfigJson = "templates/vite-config-solid.json"
+	}
+
+	if ctx.Template == "vue" {
+		libPackageJson = "templates/lib-package-vue.json"
+		libTsconfigJson = "templates/tsconfig-lib-vue.json"
+		libViteConfigJson = "templates/vite-config-vue.json"
 	}
 
 	if ctx.Template == "typescript" {
