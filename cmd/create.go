@@ -86,7 +86,7 @@ func init() {
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
-		Short: "Create libs or packages from lit, solid, vue or react",
+		Short: "Create libs or packages from lit, solid, vue or typescript",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdCreate.CreatPackage((cmd))
 			cmdCreate.YarnLink()
