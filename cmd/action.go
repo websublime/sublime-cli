@@ -182,9 +182,9 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 
 		var manifestDestination = ""
 		if ctx.Kind == "branch" {
-			manifestDestination = fmt.Sprintf("%s@%s-%s", pkgJson.Name, pkgJson.Version, hash)
+			manifestDestination = fmt.Sprintf("%s/%s", pkgJson.Name, ctx.Environment)
 		} else {
-			manifestDestination = fmt.Sprintf("%s@%s", pkgJson.Name, pkgJson.Version)
+			manifestDestination = pkgJson.Name
 		}
 
 		supabase.Upload("manifests", manifestFile.Name(), manifestDestination)
