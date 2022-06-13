@@ -52,7 +52,7 @@
     "repository": {
       "type": "git",
       "url": "ssh://git@github.com:{{ .Repo }}.git",
-      "directory": "libs/{{ .Name }}"
+      "directory": "{{ .Type }}/{{ .Name }}"
     },
     "files": [
       "dist/",

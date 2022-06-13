@@ -40,6 +40,7 @@ type PackageJsonVars struct {
 	Email     string
 	Version   string
 	Scope     string
+	Type      string
 }
 
 type ViteJsonVars struct {
