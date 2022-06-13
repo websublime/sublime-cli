@@ -51,7 +51,7 @@ func init() {
 	templates := []LibTemplate{
 		{
 			Type: "vue",
-			Link: "",
+			Link: "git@github.com:websublime/sublime-vue-template.git",
 		},
 		{
 			Type: "lit",
@@ -60,10 +60,6 @@ func init() {
 		{
 			Type: "solid",
 			Link: "git@github.com:websublime/sublime-solid-template.git",
-		},
-		{
-			Type: "react",
-			Link: "",
 		},
 		{
 			Type: "typescript",
@@ -83,14 +79,14 @@ func init() {
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
 	createCmd.MarkFlagRequired("name")
 
-	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template (lit) incoming support to: (react, solid, vue, typescript)")
+	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template: (lit, solid, vue, typescript)")
 	createCmd.MarkFlagRequired("template")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
-		Short: "Create libs or packages from lit, solid, vue or react",
+		Short: "Create libs or packages from lit, solid, vue or typescript",
 		Run: func(cmd *cobra.Command, args []string) {
 			cmdCreate.CreatPackage((cmd))
 			cmdCreate.YarnLink()
@@ -121,7 +117,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	}
 
 	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue, react or typescript")
+		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or typescript")
 		cobra.CheckErr("Template error")
 	}
 
@@ -142,6 +138,12 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		libPackageJson = "templates/lib-package-solid.json"
 		libTsconfigJson = "templates/tsconfig-lib-solid.json"
 		libViteConfigJson = "templates/vite-config-solid.json"
+	}
+
+	if ctx.Template == "vue" {
+		libPackageJson = "templates/lib-package-vue.json"
+		libTsconfigJson = "templates/tsconfig-lib-vue.json"
+		libViteConfigJson = "templates/vite-config-vue.json"
 	}
 
 	if ctx.Template == "typescript" {
