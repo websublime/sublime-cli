@@ -161,6 +161,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		Repo:      sublime.Repo,
 		Name:      slug.Make(ctx.Name),
 		Scope:     sublime.Scope,
+		Type:      libType,
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Package json created and configured!")
