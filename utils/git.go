@@ -22,6 +22,7 @@ THE SOFTWARE.
 package utils
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -55,14 +56,14 @@ func GetShortCommit(path string, hash string) (string, error) {
 }
 
 func GetBeforeAndLastDiff(path string, searchFor string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "diff", "--name-only", "HEAD^", "HEAD", "--", searchFor)
+	gitCmd := exec.Command("git", "-C", path, "diff", "--name-only", "HEAD^", "HEAD", "--", fmt.Sprintf("'*%s*'", searchFor))
 	output, err := gitCmd.Output()
 
 	return string(output), err
 }
 
 func GetBeforeDiff(path string, searchFor string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "diff", "--name-only", "HEAD^", "--", searchFor)
+	gitCmd := exec.Command("git", "-C", path, "diff", "--name-only", "HEAD^", "--", fmt.Sprintf("'*%s*'", searchFor))
 	output, err := gitCmd.Output()
 
 	return string(output), err
