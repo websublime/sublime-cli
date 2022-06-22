@@ -129,7 +129,7 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 
 	changesetConfigFile, _ := os.Create(filepath.Join(workspaceDir, ".changeset/config.json"))
 	changesetConfigFile.WriteString(utils.ProcessString(string(changesetConfigJson), &utils.PackageJsonVars{
-		Namespace: rootNamespace,
+		Namespace: ctx.Repo,
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Changeset created and configured!")
