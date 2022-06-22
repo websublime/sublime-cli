@@ -133,9 +133,6 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 
 	color.Info.Println("🥼 Commits counted: ", counter)
 
-	lastCommit, _ := utils.GetLastCommit(sublime.Root)
-	// beforeCommit, _ := utils.GetBeforeLastCommit(sublime.Root)
-	hash, _ := utils.GetShortCommit(sublime.Root, lastCommit)
 	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
 
 	if ctx.Kind == "branch" {
@@ -171,7 +168,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 
 		var destinationFolder = ""
 		if ctx.Kind == "branch" {
-			destinationFolder = fmt.Sprintf("%s@%s-%s", pkgs[key].Name, pkgJson.Version, hash)
+			destinationFolder = fmt.Sprintf("%s@%s-SNAPSHOT", pkgs[key].Name, pkgJson.Version)
 		} else {
 			destinationFolder = fmt.Sprintf("%s@%s", pkgs[key].Name, pkgJson.Version)
 		}
@@ -189,7 +186,6 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 
 		color.Info.Println("🥼 Files uploaded to bucket. Starting manifest creation")
 
-		// https://debvasmsyxrewpmqckdv.supabase.co/storage/v1/object/public/assets/utils@0.0.4-da00d90/ws-browser.mjs
 		manifestBaseLink := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", ctx.BaseUrl, ctx.Bucket, destinationFolder)
 
 		manifestJson, _ := FileTemplates.ReadFile("templates/manifest.json")
