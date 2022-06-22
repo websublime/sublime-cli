@@ -65,7 +65,7 @@ func init() {
 	actionCmd.MarkFlagRequired("url")
 }
 
-func getSublimePackages(commitsCount int64) []core.Packages {
+func getSublimeBranchPackages(commitsCount int64) []core.Packages {
 	sublime := core.GetSublime()
 	pkgs := []core.Packages{}
 
@@ -74,14 +74,34 @@ func getSublimePackages(commitsCount int64) []core.Packages {
 		var output string = ""
 
 		if commitsCount >= 2 {
-			output, _ = utils.GetBeforeAndLastDiff(sublime.Root, pkgName)
+			output, _ = utils.GetBeforeAndLastDiff(sublime.Root)
 		} else if commitsCount == 1 {
-			output, _ = utils.GetBeforeDiff(sublime.Root, pkgName)
+			output, _ = utils.GetBeforeDiff(sublime.Root)
 		}
 
-		counted := strings.Count(output, "\n")
+		founded := strings.Contains(output, pkgName)
 
-		if counted > 0 {
+		if founded {
+			pkgs = append(pkgs, sublime.Packages[key])
+		}
+	}
+
+	return pkgs
+}
+
+func getSublimeTagPackages() []core.Packages {
+	sublime := core.GetSublime()
+	pkgs := []core.Packages{}
+
+	for key := range sublime.Packages {
+		pkgName := sublime.Packages[key].Name
+		var output string = ""
+
+		output, _ = utils.GetDiffBetweenTags(sublime.Root)
+
+		founded := strings.Contains(output, pkgName)
+
+		if founded {
 			pkgs = append(pkgs, sublime.Packages[key])
 		}
 	}
@@ -103,6 +123,8 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 	color.Info.Println("🥼 Starting Feature Artifacts creation")
 	sublime := core.GetSublime()
 
+	var pkgs = []core.Packages{}
+
 	count, _ := utils.GetCommitsCount(sublime.Root)
 	counter, err := strconv.ParseInt(count, 10, 0)
 	if err != nil || counter <= 0 {
@@ -116,7 +138,11 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 	hash, _ := utils.GetShortCommit(sublime.Root, lastCommit)
 	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
 
-	pkgs := getSublimePackages(counter)
+	if ctx.Kind == "branch" {
+		pkgs = getSublimeBranchPackages(counter)
+	} else {
+		pkgs = getSublimeTagPackages()
+	}
 
 	if len(pkgs) <= 0 {
 		color.Info.Println("🥼 No packages founded to build artifacts")
