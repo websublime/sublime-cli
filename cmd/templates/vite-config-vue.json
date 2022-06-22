@@ -7,7 +7,12 @@ import postcss from 'rollup-plugin-postcss';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite';
 
+import { version } from './package.json';
+
 module.exports = defineConfig({
+  define: {
+    Version: JSON.stringify(version)
+  },
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
