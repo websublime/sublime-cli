@@ -22,56 +22,97 @@ THE SOFTWARE.
 package utils
 
 import (
-	"fmt"
 	"os/exec"
 	"strings"
 )
 
 func InitGit(path string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "init")
+	gitCmd := exec.Command("git", "init")
+	gitCmd.Dir = path
 	output, err := gitCmd.Output()
 
 	return strings.Replace(string(output), "\n", "", -1), err
 }
 
 func GetLastCommit(path string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "rev-parse", "head")
+	gitCmd := exec.Command("git", "rev-parse", "head")
+	gitCmd.Dir = path
 	output, err := gitCmd.Output()
 
 	return strings.Replace(string(output), "\n", "", -1), err
 }
 
 func GetBeforeLastCommit(path string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "rev-parse", "head^")
+	gitCmd := exec.Command("git", "rev-parse", "head^")
+	gitCmd.Dir = path
 	output, err := gitCmd.Output()
 
 	return strings.Replace(string(output), "\n", "", -1), err
 }
 
 func GetShortCommit(path string, hash string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "rev-parse", "--short", hash)
+	gitCmd := exec.Command("git", "rev-parse", "--short", hash)
+	gitCmd.Dir = path
 	output, err := gitCmd.Output()
 
 	return strings.Replace(string(output), "\n", "", -1), err
 }
 
-func GetBeforeAndLastDiff(path string, searchFor string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "--no-pager", "diff", "--name-only", "HEAD^", "HEAD", "--", fmt.Sprintf("'*%s*'", searchFor))
-	output, err := gitCmd.Output()
+func GetBeforeAndLastDiff(path string) (string, error) {
+	gitCmd := exec.Command("git", "--no-pager", "diff", "--name-only", "HEAD^", "HEAD")
+	gitCmd.Dir = path
+	output, err := gitCmd.CombinedOutput()
 
 	return string(output), err
 }
 
-func GetBeforeDiff(path string, searchFor string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "--no-pager", "diff", "--name-only", "HEAD^", "--", fmt.Sprintf("'*%s*'", searchFor))
+func GetBeforeDiff(path string) (string, error) {
+	gitCmd := exec.Command("git", "--no-pager", "diff", "--name-only", "HEAD^")
+	gitCmd.Dir = path
 	output, err := gitCmd.Output()
 
 	return string(output), err
 }
 
 func GetCommitsCount(path string) (string, error) {
-	gitCmd := exec.Command("git", "-C", path, "rev-list", "--objects", "--all", "--count")
+	gitCmd := exec.Command("git", "rev-list", "--objects", "--all", "--count")
+	gitCmd.Dir = path
 	output, err := gitCmd.Output()
 
 	return strings.Replace(string(output), "\n", "", -1), err
+}
+
+func GetDiffBetweenTags(path string) (string, error) {
+	gitCmd := exec.Command("git", "rev-list", "--tags", "--max-count=1")
+	gitCmd.Dir = path
+	lastTagByte, er := gitCmd.Output()
+
+	if er != nil {
+		return "", er
+	}
+
+	gitCmd = exec.Command("git", "rev-list", "--tags", "--skip=1", "--max-count=1")
+	gitCmd.Dir = path
+	tagBeforeByte, erro := gitCmd.Output()
+
+	if erro != nil {
+		return "", er
+	}
+
+	lastTag := strings.Replace(string(lastTagByte), "\n", "", -1)
+	tagBefore := strings.Replace(string(tagBeforeByte), "\n", "", -1)
+
+	if tagBefore == "" {
+		tagBefore = "main"
+	}
+
+	if lastTag == "" {
+		lastTag = "HEAD"
+	}
+
+	gitCmd = exec.Command("git", "--no-pager", "diff", "--name-only", tagBefore, lastTag)
+	gitCmd.Dir = path
+	output, err := gitCmd.Output()
+
+	return string(output), err
 }
