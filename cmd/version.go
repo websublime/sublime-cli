@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	Version   string = "v0.0.18"
+	Version   string = "v0.0.19"
 	BuildTime string = ""
 )
 
