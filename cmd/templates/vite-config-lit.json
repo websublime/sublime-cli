@@ -5,10 +5,14 @@ import path from 'path';
 import { workspacesAlias } from '{{ .Scope }}/vite';
 import postcss from 'rollup-plugin-postcss';
 import postcssLit from 'rollup-plugin-postcss-lit';
-// import ts from 'rollup-plugin-typescript2';
 import { defineConfig } from 'vite';
 
+import { version } from './package.json';
+
 module.exports = defineConfig({
+  define: {
+    Version: JSON.stringify(version)
+  },
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
