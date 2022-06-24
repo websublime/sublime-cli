@@ -52,8 +52,10 @@ Use "sublime [command] --help" for more information about a command.
 First let's start to create a workspace monorepo. The creation of the workspace will need some parameters to fullfill package.json needs.
 
 ```bash
-> sublime workspace --name ws-libs-ui --scope @ws --repo sublime/ws-libs-ui --username miguelramos --email miguel@websublime.dev
+> sublime workspace --name ws-libs-ui --scope @websublime --repo sublime/ws-libs-ui --username miguelramos --email miguel@websublime.dev
 ```
+
+The scope should be the github organization name, because artifacts will be release to github and able to install it via npm.
 
 | Parameter | Description |
 |---|---|

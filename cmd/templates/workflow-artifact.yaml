@@ -7,7 +7,7 @@ on:
 
 env:
   CI: true
-  NODE_ENV: "production"
+  NODE_ENV: "develop"
 
 jobs:
   artifacts:
@@ -29,11 +29,12 @@ jobs:
       - name: Build
         run: yarn build
 
-     - name: Artifacts
+      - name: Artifacts
         env:
           BUCKET: ${{ secrets.BUCKET }}
           STORAGE_URL: ${{ secrets.STORAGE_URL }}
           STORAGE_KEY: ${{ secrets.STORAGE_KEY }}
+          NODE_ENV: "production"
         run: |
           wget https://github.com/websublime/sublime-cli/releases/download/[[ .Version ]]/sublime-[[ .Version ]]-linux-amd64.tar.gz
           tar -xf sublime-[[ .Version ]]-linux-amd64.tar.gz sublime
