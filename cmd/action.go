@@ -94,16 +94,7 @@ func getSublimeTagPackages() []core.Packages {
 	pkgs := []core.Packages{}
 
 	for key := range sublime.Packages {
-		pkgName := sublime.Packages[key].Name
-		var output string = ""
-
-		output, _ = utils.GetDiffBetweenTags(sublime.Root)
-
-		founded := strings.Contains(output, pkgName)
-
-		if founded {
-			pkgs = append(pkgs, sublime.Packages[key])
-		}
+		pkgs = append(pkgs, sublime.Packages[key])
 	}
 
 	return pkgs
