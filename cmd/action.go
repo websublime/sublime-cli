@@ -52,7 +52,7 @@ func init() {
 	rootCmd.AddCommand(actionCmd)
 
 	actionCmd.Flags().StringVar(&cmd.Kind, "kind", "branch", "Kind of action (branch or tag)")
-	actionCmd.Flags().StringVar(&cmd.Client, "client", "supabase", "Client to use to upload to storage")
+	actionCmd.Flags().StringVar(&cmd.Client, "client", "supabase", "Client to use to upload to storage (supabase, github)")
 	actionCmd.Flags().StringVar(&cmd.Environment, "env", "develop", "Environment")
 
 	actionCmd.Flags().StringVar(&cmd.Bucket, "bucket", "", "Bucket storage name [REQUIRED]")
@@ -125,6 +125,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 	color.Info.Println("🥼 Commits counted: ", counter)
 
 	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
+	github := clients.NewGithub(fmt.Sprintf("https://api.github.com/repos/%s/contents", ctx.BaseUrl), ctx.Key, ctx.Environment)
 
 	if ctx.Kind == "branch" {
 		pkgs = getSublimeBranchPackages(counter)
@@ -172,12 +173,21 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 		color.Info.Println("🥼 Founded", len(fileList), "files to be upload to assets bucket")
 
 		for idx := range fileList {
-			supabase.Upload(ctx.Bucket, fileList[idx], destinationFolder)
+			if ctx.Client == "supabase" {
+				supabase.Upload(ctx.Bucket, fileList[idx], destinationFolder)
+			} else if ctx.Client == "github" {
+				github.Upload("assets", fileList[idx], destinationFolder)
+			}
 		}
 
 		color.Info.Println("🥼 Files uploaded to bucket. Starting manifest creation")
 
-		manifestBaseLink := fmt.Sprintf("%s/storage/v1/object/public/%s/%s", ctx.BaseUrl, ctx.Bucket, destinationFolder)
+		var manifestBaseLink = ""
+		if ctx.Client == "supabase" {
+			manifestBaseLink = fmt.Sprintf("%s/storage/v1/object/public/%s/%s", ctx.BaseUrl, ctx.Bucket, destinationFolder)
+		} else if ctx.Client == "github" {
+			manifestBaseLink = fmt.Sprintf("https://cdn.jsdelivr.net/gh/%s/%s/%s", ctx.BaseUrl, "assets", destinationFolder)
+		}
 
 		manifestJson, _ := FileTemplates.ReadFile("templates/manifest.json")
 		manifestFile := core.CreateManifest(manifestJson, core.Manifest{
@@ -200,8 +210,15 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 			manifestDestination = pkgJson.Name
 		}
 
-		supabase.Upload("manifests", manifestFile.Name(), manifestDestination)
-		manifestLink := fmt.Sprintf("%s/storage/v1/object/public/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
+		var manifestLink = ""
+		if ctx.Client == "supabase" {
+			supabase.Upload("manifests", manifestFile.Name(), manifestDestination)
+			manifestLink = fmt.Sprintf("%s/storage/v1/object/public/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
+		} else if ctx.Client == "github" {
+			github.Upload("manifests", manifestFile.Name(), manifestDestination)
+			manifestLink = fmt.Sprintf("https://cdn.jsdelivr.net/gh/%s/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
+		}
+
 		os.Remove(manifestFile.Name())
 
 		color.Info.Println("🥼 Manifest uploaded to:", manifestLink)
