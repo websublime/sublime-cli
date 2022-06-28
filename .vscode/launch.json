@@ -12,16 +12,18 @@
             "program": "${workspaceFolder}",
             "args": [
                 "--root", 
-                "./ui-libs", 
+                "/Users/miguelramos/Public/Projects/websublime-workspace/sublime-ui", 
                 "action", 
                 "--kind", 
                 "branch", 
                 "--bucket", 
                 "assets", 
                 "--url",
-                "https://debvasmsyxrewpmqckdv.supabase.co",
+                "websublime/flare",
                 "--key", 
-                ""
+                "",
+                "--client",
+                "github"
             ]
         },
         {

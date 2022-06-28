@@ -24,9 +24,11 @@ package clients
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,6 +49,12 @@ type Supabase struct {
 	HTTPClient  *http.Client
 }
 
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
+}
+
 func NewSupabase(baseURL string, supabaseKey string, env string) *Supabase {
 	return &Supabase{
 		BaseURL:     baseURL,
@@ -65,11 +73,6 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	}
 	defer file.Close()
 
-	fileContents, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		panic(fmt.Errorf("Couldn't read file: %v", err))
-	}
-
 	fileExtension := filepath.Ext(filePath)
 	mime := utils.GetMimeType(strings.TrimPrefix(fileExtension, "."))
 
@@ -80,14 +83,24 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 
 	payload := new(bytes.Buffer)
 	writer := multipart.NewWriter(payload)
-	defer writer.Close()
 
-	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition",
+		fmt.Sprintf(`form-data; name="file"; filename="%s"`,
+			escapeQuotes(filepath.Base(file.Name()))))
+	h.Set("Content-Type", mime)
+
+	formfile, err := writer.CreatePart(h)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't create form for file: %v", err))
 	}
 
-	part.Write(fileContents)
+	_, err = io.Copy(formfile, file)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't copy file to form: %v", err))
+	}
+
+	writer.Close()
 
 	uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
 
@@ -95,8 +108,7 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
 	req.Header.Add("apikey", ctx.ApiKey)
 	req.Header.Add("x-upsert", "true")
-	//req.Header.Add("x-cache-control", "3600")
-	req.Header.Add("Content-Type", mime)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
 	req.Header.Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
 
 	// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
