@@ -109,7 +109,7 @@ The branch will create a snapshot artifact to be use for development needs. On t
 Example of what runs on github action.
 
 ```bash
-> sublime action --kind branch --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV"
+> sublime action --kind branch --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV" --client github
 ```
 
 | Parameter | Description |
@@ -119,8 +119,9 @@ Example of what runs on github action.
 | --url | Storage base url |
 | --key | Storage api key |
 | --env | Environment in which you are right now (dev, prod) |
+| --client | Where to deploy the artifact (supabase storage or github) |
 
-For now only Supabase storage is supported.
+When used as github you can consume the scripts via https://cdn.jsdelivr.net/gh/ORG/REPO/your-script. This will be show on action console.
 
 # Installation
 
