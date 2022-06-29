@@ -52,8 +52,10 @@ func init() {
 	rootCmd.AddCommand(actionCmd)
 
 	actionCmd.Flags().StringVar(&cmd.Kind, "kind", "branch", "Kind of action (branch or tag)")
-	actionCmd.Flags().StringVar(&cmd.Client, "client", "supabase", "Client to use to upload to storage (supabase, github)")
 	actionCmd.Flags().StringVar(&cmd.Environment, "env", "develop", "Environment")
+
+	actionCmd.Flags().StringVar(&cmd.Client, "client", "", "Client to use to upload to storage (supabase, github) [REQUIRED]")
+	actionCmd.MarkFlagRequired("client")
 
 	actionCmd.Flags().StringVar(&cmd.Bucket, "bucket", "", "Bucket storage name [REQUIRED]")
 	actionCmd.MarkFlagRequired("bucket")
@@ -124,8 +126,13 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 
 	color.Info.Println("🥼 Commits counted: ", counter)
 
-	supabase := clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
-	github := clients.NewGithub(fmt.Sprintf("https://api.github.com/repos/%s/contents", ctx.BaseUrl), ctx.Key, ctx.Environment)
+	var supabase *clients.Supabase
+	var github *clients.Github
+	if ctx.Client == "supabase" {
+		supabase = clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
+	} else if ctx.Client == "github" {
+		github = clients.NewGithub(fmt.Sprintf("https://api.github.com/repos/%s/contents", ctx.BaseUrl), ctx.Key, ctx.Environment)
+	}
 
 	if ctx.Kind == "branch" {
 		pkgs = getSublimeBranchPackages(counter)
