@@ -23,5 +23,5 @@ package utils
 
 var (
 	ApiUrl string = "https://debvasmsyxrewpmqckdv.supabase.co"
-	ApiKey string = ""
+	ApiKey string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ3OTM3NzUsImV4cCI6MTk3MDM2OTc3NX0.J2JZZ8IHInHwuGxNim4vpoLTx2ij344A1oOh1rIwbok"
 )

@@ -23,10 +23,12 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/gookit/color"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 	"github.com/websublime/sublime-cli/core"
 	"github.com/websublime/sublime-cli/core/clients"
@@ -90,21 +92,39 @@ func NewRegisterCmd(cmdReg *RegisterCommand) *cobra.Command {
 }
 
 func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
+	color.Info.Println("👣 Start registration process.")
+
 	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
 	register := &Register{}
 
-	response := supabase.Register(ctx.Email, ctx.Password, ctx.Name, ctx.Username)
+	response, err := supabase.Register(ctx.Email, ctx.Password, ctx.Name, ctx.Username)
+	if err != nil {
+		color.Error.Println("Error registering author:", err)
+		cobra.CheckErr(err)
+	}
 
-	json.Unmarshal([]byte(response), register)
+	json.Unmarshal([]byte(response), &register)
+
+	color.Success.Println("👣 Author registered with success.")
+	color.Info.Println("👣 Creating user rc file.")
 
 	userDir := filepath.Join(core.GetSublime().HomeDir, ".sublime")
 	if err := os.Mkdir(userDir, 0755); err != nil {
-		color.Error.Printf("Error creating workspace: %s", ctx.Name)
-		os.Exit(1)
+		color.Error.Println("Error creating rc user directory", err)
+		cobra.CheckErr(err)
 	}
 
-	rcJson, _ := FileTemplates.ReadFile("templates/rc-template.json")
-	rcFile, _ := os.Create(filepath.Join(userDir, "rc.json"))
+	rcJson, err := FileTemplates.ReadFile("templates/rc-template.json")
+	if err != nil {
+		color.Error.Println("Unable to read rc template file:", err)
+		cobra.CheckErr(err)
+	}
+
+	rcFile, err := os.Create(filepath.Join(userDir, "rc.json"))
+	if err != nil {
+		color.Error.Println("Unable to create rc author file:", err)
+		cobra.CheckErr(err)
+	}
 
 	rcFile.WriteString(utils.ProcessString(string(rcJson), &utils.RcJsonVars{
 		Name:         register.Metadata.Name,
@@ -113,4 +133,19 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 		Organization: ctx.Organization,
 		Token:        "",
 	}, "{{", "}}"))
+
+	color.Success.Println("👣 Author data persisted with success.")
+	fmt.Println()
+
+	// TODO: create organization
+
+	tabular := table.NewWriter()
+	tabular.SetStyle(table.StyleBold)
+	tabular.AppendHeader(table.Row{"Sublime cloud registration"})
+	tabular.AppendRow(table.Row{"Author", ctx.Name})
+	tabular.AppendRow(table.Row{"Author email", ctx.Email})
+	tabular.AppendRow(table.Row{"Author organization", ctx.Organization})
+	tabular.AppendFooter(table.Row{"Please check your email and finalize the registration process."})
+
+	fmt.Println(tabular.Render())
 }

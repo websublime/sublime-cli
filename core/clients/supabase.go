@@ -140,7 +140,7 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	return string(body)
 }
 
-func (ctx *Supabase) Register(email string, password string, name string, username string) string {
+func (ctx *Supabase) Register(email string, password string, name string, username string) (string, error) {
 	signup := &SignUp{
 		Email:    email,
 		Password: password,
@@ -149,26 +149,20 @@ func (ctx *Supabase) Register(email string, password string, name string, userna
 			Name:     name,
 		},
 	}
-	payload, _ := json.Marshal(signup)
+	payload, err := json.Marshal(signup)
 
 	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
 
-	req, _ := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
 	req.Header.Add("apikey", ctx.ApiKey)
 
 	response, err := ctx.HTTPClient.Do(req)
-	if err != nil {
-		panic(fmt.Errorf("Couldn't register the author: %v", err))
-	}
 
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		panic(fmt.Errorf("Couldn't read body response: %v", err))
-	}
 
-	return string(body)
+	return string(body), err
 }
