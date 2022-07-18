@@ -63,6 +63,36 @@
                 "--template", 
                 "lit" 
             ]
+        },
+        {
+            "name": "Launch Register",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {
+                "SUBLIME_API_URL": "https://debvasmsyxrewpmqckdv.supabase.co",
+                "SUBLIME_API_KEY": ""
+            },
+            "args": [
+                "register",
+                "--name", 
+                "Miguel Ramos", 
+                "--username", 
+                "miguelramos", 
+                "--email", 
+                "miguel@websublime.dev",
+                "--organization",
+                "websublime", 
+            ]
+        },
+        {
+            "name": "Launch Root",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": []
         }
     ]
 }

@@ -25,6 +25,9 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/gookit/color"
+	"github.com/spf13/cobra"
 )
 
 type PackageType string
@@ -46,6 +49,7 @@ type Sublime struct {
 	Repo      string     `json:"repo"`
 	Namespace string     `json:"namespace"`
 	Root      string     `json:"root"`
+	HomeDir   string     `json:"homeDir"`
 	Packages  []Packages `json:"packages"`
 }
 
@@ -78,10 +82,21 @@ type TsConfigReferences struct {
 var sublime = NewSublime()
 
 func NewSublime() *Sublime {
-	dir, _ := os.Getwd()
+	dir, err := os.Getwd()
+	if err != nil {
+		color.Error.Println("Unable to get current directory")
+		cobra.CheckErr(err)
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		color.Error.Println("Unable to get user home directory")
+		cobra.CheckErr(err)
+	}
 
 	return &Sublime{
 		Root:     dir,
+		HomeDir:  homeDir,
 		Packages: []Packages{},
 	}
 }
@@ -91,7 +106,11 @@ func GetSublime() *Sublime {
 }
 
 func (ctx *Sublime) SetRoot(path string) {
-	dir, _ := os.Getwd()
+	dir, err := os.Getwd()
+	if err != nil {
+		color.Error.Println("Unable to get current directory")
+		cobra.CheckErr(err)
+	}
 
 	if filepath.IsAbs(path) {
 		ctx.Root = path
@@ -102,7 +121,12 @@ func (ctx *Sublime) SetRoot(path string) {
 
 func (ctx *Sublime) GetTsconfig() *TsconfigBase {
 	tsconfig := &TsconfigBase{}
-	data, _ := os.ReadFile(filepath.Join(ctx.Root, "tsconfig.base.json"))
+	data, err := os.ReadFile(filepath.Join(ctx.Root, "tsconfig.base.json"))
+
+	if err != nil {
+		color.Error.Println("Unable to get tsconfig.base.json file")
+		cobra.CheckErr(err)
+	}
 
 	json.Unmarshal(data, &tsconfig)
 

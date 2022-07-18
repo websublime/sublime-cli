@@ -240,3 +240,13 @@ func GetMimeType(extension string) string {
 
 	return fmt.Sprintf("%s; charset=utf-8", mimetype)
 }
+
+func Contains(args []string, lookup string) bool {
+	for _, value := range args {
+		if value == lookup {
+			return true
+		}
+	}
+
+	return false
+}
