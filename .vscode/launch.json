@@ -83,7 +83,9 @@
                 "--email", 
                 "miguel@websublime.dev",
                 "--organization",
-                "websublime", 
+                "websublime",
+                "--password",
+                "my_secret_password"
             ]
         },
         {

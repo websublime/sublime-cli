@@ -43,6 +43,14 @@ type PackageJsonVars struct {
 	Type      string
 }
 
+type RcJsonVars struct {
+	Name         string
+	Username     string
+	Email        string
+	Organization string
+	Token        string
+}
+
 type ViteJsonVars struct {
 	Namespace string
 	Scope     string

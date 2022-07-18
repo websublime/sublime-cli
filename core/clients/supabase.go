@@ -23,6 +23,7 @@ package clients
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -38,8 +39,9 @@ import (
 )
 
 const (
-	AuthEndpoint = "auth/v1"
-	RestEndpoint = "rest/v1"
+	AuthEndpoint    = "auth/v1"
+	RestEndpoint    = "rest/v1"
+	StorageEndpoint = "storage/v1"
 )
 
 type Supabase struct {
@@ -47,6 +49,17 @@ type Supabase struct {
 	ApiKey      string
 	Environment string
 	HTTPClient  *http.Client
+}
+
+type SignUpData struct {
+	Username string `json:"username"`
+	Name     string `json:"name"`
+}
+
+type SignUp struct {
+	Email    string     `json:"email"`
+	Password string     `json:"password"`
+	Data     SignUpData `json:"data"`
 }
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
@@ -102,7 +115,7 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 
 	writer.Close()
 
-	uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
+	uri := fmt.Sprintf("%s/%s/object/%s/%s/%s", ctx.BaseURL, StorageEndpoint, bucket, destination, filepath.Base(file.Name()))
 
 	req, _ := http.NewRequest("POST", uri, payload)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
@@ -115,6 +128,39 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	response, err := ctx.HTTPClient.Do(req)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't upload file: %v", err))
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't read body response: %v", err))
+	}
+
+	return string(body)
+}
+
+func (ctx *Supabase) Register(email string, password string, name string, username string) string {
+	signup := &SignUp{
+		Email:    email,
+		Password: password,
+		Data: SignUpData{
+			Username: username,
+			Name:     name,
+		},
+	}
+	payload, _ := json.Marshal(signup)
+
+	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
+
+	req, _ := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		panic(fmt.Errorf("Couldn't register the author: %v", err))
 	}
 
 	defer response.Body.Close()

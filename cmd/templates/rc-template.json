@@ -1,0 +1,7 @@
+{
+    "name": "{{ .Name }}",
+    "username": "{{ .Username }}",
+    "email": "{{ .Email }}",
+    "organization": "{{ .Organization }}",
+    "token": "{{ .Token }}"
+}

@@ -21,13 +21,41 @@ THE SOFTWARE.
 */
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+
+	"github.com/gookit/color"
+	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/core/clients"
+	"github.com/websublime/sublime-cli/utils"
+)
 
 type RegisterCommand struct {
 	Name         string
 	Organization string
 	Username     string
 	Email        string
+	Password     string
+}
+
+type UserMetadata struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+}
+
+type Register struct {
+	Id           string       `json:"id"`
+	Aud          string       `json:"aud"`
+	Role         string       `json:"role"`
+	Email        string       `json:"email"`
+	Phone        string       `json:"phone"`
+	Confirmation string       `json:"confirmation_sent_at"`
+	CreatedAt    string       `json:"created_at"`
+	UpdatedAt    string       `json:"updated_at"`
+	Metadata     UserMetadata `json:"user_metadata"`
 }
 
 func init() {
@@ -44,16 +72,45 @@ func init() {
 	registerCmd.Flags().StringVar(&cmd.Email, "email", "", "Git email [REQUIRED]")
 	registerCmd.MarkFlagRequired("email")
 
+	registerCmd.Flags().StringVar(&cmd.Password, "password", "", "User password [REQUIRED]")
+	registerCmd.MarkFlagRequired("password")
+
 	registerCmd.Flags().StringVar(&cmd.Organization, "organization", "", "Github organization name [REQUIRED]")
 	registerCmd.MarkFlagRequired("organization")
 }
 
-func NewRegisterCmd(cmdWsp *RegisterCommand) *cobra.Command {
+func NewRegisterCmd(cmdReg *RegisterCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "register",
 		Short: "Register author on cloud platform",
-		Run:   func(cmd *cobra.Command, args []string) {},
+		Run: func(cmd *cobra.Command, args []string) {
+			cmdReg.Run(cmd)
+		},
 	}
 }
 
-func (ctx *RegisterCommand) Run(cmd *cobra.Command) {}
+func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
+	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
+	register := &Register{}
+
+	response := supabase.Register(ctx.Email, ctx.Password, ctx.Name, ctx.Username)
+
+	json.Unmarshal([]byte(response), register)
+
+	userDir := filepath.Join(core.GetSublime().HomeDir, ".sublime")
+	if err := os.Mkdir(userDir, 0755); err != nil {
+		color.Error.Printf("Error creating workspace: %s", ctx.Name)
+		os.Exit(1)
+	}
+
+	rcJson, _ := FileTemplates.ReadFile("templates/rc-template.json")
+	rcFile, _ := os.Create(filepath.Join(userDir, "rc.json"))
+
+	rcFile.WriteString(utils.ProcessString(string(rcJson), &utils.RcJsonVars{
+		Name:         register.Metadata.Name,
+		Username:     register.Metadata.Username,
+		Email:        register.Email,
+		Organization: ctx.Organization,
+		Token:        "",
+	}, "{{", "}}"))
+}
