@@ -89,6 +89,24 @@
             ]
         },
         {
+            "name": "Launch Login",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {
+                "SUBLIME_API_URL": "https://debvasmsyxrewpmqckdv.supabase.co",
+                "SUBLIME_API_KEY": ""
+            },
+            "args": [
+                "login",
+                "--email", 
+                "miguel@websublime.dev",
+                "--password",
+                "my_secret_password"
+            ]
+        },
+        {
             "name": "Launch Root",
             "type": "go",
             "request": "launch",

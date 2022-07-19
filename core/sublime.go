@@ -28,6 +28,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/utils"
 )
 
 type PackageType string
@@ -44,13 +45,14 @@ type Packages struct {
 }
 
 type Sublime struct {
-	Name      string     `json:"name"`
-	Scope     string     `json:"scope"`
-	Repo      string     `json:"repo"`
-	Namespace string     `json:"namespace"`
-	Root      string     `json:"root"`
-	HomeDir   string     `json:"homeDir"`
-	Packages  []Packages `json:"packages"`
+	Name      string           `json:"name"`
+	Scope     string           `json:"scope"`
+	Repo      string           `json:"repo"`
+	Namespace string           `json:"namespace"`
+	Root      string           `json:"root"`
+	HomeDir   string           `json:"homeDir"`
+	Packages  []Packages       `json:"packages"`
+	Author    utils.RcJsonVars `json:"author"`
 }
 
 type TsconfigBase struct {
@@ -131,4 +133,8 @@ func (ctx *Sublime) GetTsconfig() *TsconfigBase {
 	json.Unmarshal(data, &tsconfig)
 
 	return tsconfig
+}
+
+func (ctx *Sublime) SetAuthor(metadata *utils.RcJsonVars) {
+	ctx.Author = *metadata
 }

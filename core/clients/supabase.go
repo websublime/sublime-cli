@@ -24,6 +24,7 @@ package clients
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -150,19 +151,35 @@ func (ctx *Supabase) Register(email string, password string, name string, userna
 		},
 	}
 	payload, err := json.Marshal(signup)
+	if err != nil {
+		return "", err
+	}
 
 	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
 
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
 	req.Header.Add("apikey", ctx.ApiKey)
 
 	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
 
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
 
 	return string(body), err
 }
@@ -174,19 +191,35 @@ func (ctx *Supabase) Login(email string, password string) (string, error) {
 	}
 
 	payload, err := json.Marshal(login)
+	if err != nil {
+		return "", err
+	}
 
 	uri := fmt.Sprintf("%s/%s/token?grant_type=password", ctx.BaseURL, AuthEndpoint)
 
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
 	req.Header.Add("apikey", ctx.ApiKey)
 
 	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
 
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
 
 	return string(body), err
 }

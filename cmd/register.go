@@ -132,6 +132,8 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 		Email:        register.Email,
 		Organization: ctx.Organization,
 		Token:        "",
+		ID:           register.Id,
+		Refresh:      "",
 	}, "{{", "}}"))
 
 	color.Success.Println("👣 Author data persisted with success.")

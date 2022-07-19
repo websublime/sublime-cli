@@ -3,5 +3,8 @@
     "username": "{{ .Username }}",
     "email": "{{ .Email }}",
     "organization": "{{ .Organization }}",
-    "token": "{{ .Token }}"
+    "token": "{{ .Token }}",
+    "id": "{{ .ID }}",
+    "expires": "{{ .Expire }}",
+    "refresh_token": "{{ .Refresh }}"
 }

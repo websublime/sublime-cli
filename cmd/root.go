@@ -109,6 +109,8 @@ func executionFlagsValidation(_ *cobra.Command) {
 			color.Error.Println("You are not loggedin. Please login using the cli login command")
 			cobra.CheckErr(errors.New("empty token provided"))
 		}
+
+		sublime.SetAuthor(authorMetadata)
 	}
 }
 

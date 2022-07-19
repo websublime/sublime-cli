@@ -22,8 +22,13 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/core"
 	"github.com/websublime/sublime-cli/core/clients"
 	"github.com/websublime/sublime-cli/utils"
 )
@@ -31,6 +36,13 @@ import (
 type LoginCommand struct {
 	Email    string
 	Password string
+}
+
+type Login struct {
+	Token        string `json:"access_token"`
+	Type         string `json:"token_type"`
+	Expires      int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func init() {
@@ -56,11 +68,56 @@ func NewLoginCmd(cmdLogin *LoginCommand) *cobra.Command {
 
 func (ctx *LoginCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("👣 Author login process.")
+	sublime := core.GetSublime()
+
+	email := ctx.Email
+	if email == "" {
+		email = sublime.Author.Email
+	}
+	login := &Login{}
 
 	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
-	response, err := supabase.Login(ctx.Email, ctx.Password)
+	response, err := supabase.Login(email, ctx.Password)
 	if err != nil {
 		color.Error.Println("Error login author:", err)
 		cobra.CheckErr(err)
 	}
+
+	color.Success.Println("👣 Login successful.")
+	color.Info.Println("👣 Updating author rc file.")
+
+	json.Unmarshal([]byte(response), &login)
+
+	rcFile := filepath.Join(sublime.HomeDir, ".sublime/rc.json")
+	rcJson, err := os.ReadFile(rcFile)
+	if err != nil {
+		color.Error.Println("Authentication file not found. Please register first then login to cloud service.")
+		cobra.CheckErr(err)
+	}
+
+	authorMetadata := &utils.RcJsonVars{}
+
+	err = json.Unmarshal(rcJson, &authorMetadata)
+	if err != nil {
+		color.Error.Println("Unable to parse author rc file", err)
+		cobra.CheckErr(err)
+	}
+
+	authorMetadata.Token = login.Token
+	//authorMetadata.Expire = login.Expires
+	authorMetadata.Refresh = login.RefreshToken
+
+	data, err := json.MarshalIndent(authorMetadata, "", " ")
+	if err != nil {
+		color.Error.Println("Unable to indent author rc file", err)
+		cobra.CheckErr(err)
+	}
+
+	err = os.WriteFile(filepath.Join(sublime.HomeDir, ".sublime/rc.json"), data, 0644)
+	if err != nil {
+		color.Error.Println("Unable to update author rc file", err)
+		cobra.CheckErr(err)
+	}
+
+	color.Success.Println("👣 Author rc file updated.")
 }

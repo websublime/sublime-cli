@@ -49,6 +49,9 @@ type RcJsonVars struct {
 	Email        string
 	Organization string
 	Token        string
+	ID           string
+	Expire       string
+	Refresh      string
 }
 
 type ViteJsonVars struct {
