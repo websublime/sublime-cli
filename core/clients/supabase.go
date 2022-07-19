@@ -59,7 +59,7 @@ type SignUpData struct {
 type SignUp struct {
 	Email    string     `json:"email"`
 	Password string     `json:"password"`
-	Data     SignUpData `json:"data"`
+	Data     SignUpData `json:"data,omitempty"`
 }
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
@@ -152,6 +152,30 @@ func (ctx *Supabase) Register(email string, password string, name string, userna
 	payload, err := json.Marshal(signup)
 
 	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+
+	return string(body), err
+}
+
+func (ctx *Supabase) Login(email string, password string) (string, error) {
+	login := &SignUp{
+		Email:    email,
+		Password: password,
+	}
+
+	payload, err := json.Marshal(login)
+
+	uri := fmt.Sprintf("%s/%s/token?grant_type=password", ctx.BaseURL, AuthEndpoint)
 
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")

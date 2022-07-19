@@ -137,8 +137,6 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	color.Success.Println("👣 Author data persisted with success.")
 	fmt.Println()
 
-	// TODO: create organization
-
 	tabular := table.NewWriter()
 	tabular.SetStyle(table.StyleBold)
 	tabular.AppendHeader(table.Row{"Sublime cloud registration"})
