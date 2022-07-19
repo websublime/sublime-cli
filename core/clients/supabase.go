@@ -63,6 +63,10 @@ type SignUp struct {
 	Data     SignUpData `json:"data,omitempty"`
 }
 
+type Refresh struct {
+	Token string `json:"refresh_token"`
+}
+
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 
 func escapeQuotes(s string) string {
@@ -196,6 +200,45 @@ func (ctx *Supabase) Login(email string, password string) (string, error) {
 	}
 
 	uri := fmt.Sprintf("%s/%s/token?grant_type=password", ctx.BaseURL, AuthEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) RefreshToken(token string) (string, error) {
+	refresh := &Refresh{
+		Token: token,
+	}
+
+	payload, err := json.Marshal(refresh)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/token?grant_type=refresh_token", ctx.BaseURL, AuthEndpoint)
 
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
 	if err != nil {

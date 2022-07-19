@@ -44,14 +44,13 @@ type PackageJsonVars struct {
 }
 
 type RcJsonVars struct {
-	Name         string
-	Username     string
-	Email        string
-	Organization string
-	Token        string
-	ID           string
-	Expire       string
-	Refresh      string
+	Name     string
+	Username string
+	Email    string
+	Token    string
+	ID       string
+	Expire   int64
+	Refresh  string
 }
 
 type ViteJsonVars struct {

@@ -27,11 +27,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/core/clients"
 	"github.com/websublime/sublime-cli/utils"
 )
 
@@ -69,6 +71,7 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		executionFlagsValidation(rootCmd)
+		executionExpirationValidation(rootCmd)
 		initConfig(rootCommand)
 	})
 
@@ -111,6 +114,40 @@ func executionFlagsValidation(_ *cobra.Command) {
 		}
 
 		sublime.SetAuthor(authorMetadata)
+	}
+}
+
+func executionExpirationValidation(_ *cobra.Command) {
+	flags := os.Args[1:]
+
+	if !(utils.Contains(flags, "action") || utils.Contains(flags, "login") || utils.Contains(flags, "register")) {
+		sublime := core.GetSublime()
+
+		now := time.Now()
+		expiration := time.Unix(sublime.Author.Expire, 0)
+
+		if now.After(expiration) {
+			color.Warn.Println("⛑ Your token is expired. Starting refresh token")
+
+			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
+			response, err := supabase.RefreshToken(sublime.Author.Refresh)
+			if err != nil {
+				color.Error.Println("Unable to refresh token. Please make login command", err)
+				cobra.CheckErr(err)
+			}
+
+			login := &core.Auth{}
+
+			json.Unmarshal([]byte(response), &login)
+
+			err = sublime.UpdateAuthorMetadata(login)
+			if err != nil {
+				color.Error.Println(err)
+				cobra.CheckErr(err)
+			}
+
+			color.Success.Println("👣 Author rc file updated.")
+		}
 	}
 }
 

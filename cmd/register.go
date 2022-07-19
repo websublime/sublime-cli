@@ -36,28 +36,10 @@ import (
 )
 
 type RegisterCommand struct {
-	Name         string
-	Organization string
-	Username     string
-	Email        string
-	Password     string
-}
-
-type UserMetadata struct {
-	Name     string `json:"name"`
-	Username string `json:"username"`
-}
-
-type Register struct {
-	Id           string       `json:"id"`
-	Aud          string       `json:"aud"`
-	Role         string       `json:"role"`
-	Email        string       `json:"email"`
-	Phone        string       `json:"phone"`
-	Confirmation string       `json:"confirmation_sent_at"`
-	CreatedAt    string       `json:"created_at"`
-	UpdatedAt    string       `json:"updated_at"`
-	Metadata     UserMetadata `json:"user_metadata"`
+	Name     string
+	Username string
+	Email    string
+	Password string
 }
 
 func init() {
@@ -76,16 +58,13 @@ func init() {
 
 	registerCmd.Flags().StringVar(&cmd.Password, "password", "", "User password [REQUIRED]")
 	registerCmd.MarkFlagRequired("password")
-
-	registerCmd.Flags().StringVar(&cmd.Organization, "organization", "", "Github organization name [REQUIRED]")
-	registerCmd.MarkFlagRequired("organization")
 }
 
 func NewRegisterCmd(cmdReg *RegisterCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "register",
 		Short: "Register author on cloud platform",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(cmd *cobra.Command, _ []string) {
 			cmdReg.Run(cmd)
 		},
 	}
@@ -95,7 +74,7 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("👣 Start registration process.")
 
 	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
-	register := &Register{}
+	register := &core.Register{}
 
 	response, err := supabase.Register(ctx.Email, ctx.Password, ctx.Name, ctx.Username)
 	if err != nil {
@@ -127,13 +106,11 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	}
 
 	rcFile.WriteString(utils.ProcessString(string(rcJson), &utils.RcJsonVars{
-		Name:         register.Metadata.Name,
-		Username:     register.Metadata.Username,
-		Email:        register.Email,
-		Organization: ctx.Organization,
-		Token:        "",
-		ID:           register.Id,
-		Refresh:      "",
+		Name:     register.Metadata.Name,
+		Username: register.Metadata.Username,
+		Email:    register.Email,
+		Token:    "",
+		ID:       register.Id,
 	}, "{{", "}}"))
 
 	color.Success.Println("👣 Author data persisted with success.")
@@ -144,7 +121,6 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	tabular.AppendHeader(table.Row{"Sublime cloud registration"})
 	tabular.AppendRow(table.Row{"Author", ctx.Name})
 	tabular.AppendRow(table.Row{"Author email", ctx.Email})
-	tabular.AppendRow(table.Row{"Author organization", ctx.Organization})
 	tabular.AppendFooter(table.Row{"Please check your email and finalize the registration process."})
 
 	fmt.Println(tabular.Render())

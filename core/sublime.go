@@ -23,6 +23,7 @@ package core
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -137,4 +138,35 @@ func (ctx *Sublime) GetTsconfig() *TsconfigBase {
 
 func (ctx *Sublime) SetAuthor(metadata *utils.RcJsonVars) {
 	ctx.Author = *metadata
+}
+
+func (ctx *Sublime) UpdateAuthorMetadata(auth *Auth) error {
+	rcFile := filepath.Join(ctx.HomeDir, ".sublime/rc.json")
+	rcJson, err := os.ReadFile(rcFile)
+	if err != nil {
+		return errors.New("Authentication file not found. Please register first then login to cloud service.")
+	}
+
+	authorMetadata := &utils.RcJsonVars{}
+
+	err = json.Unmarshal(rcJson, &authorMetadata)
+	if err != nil {
+		return errors.New("Unable to parse author rc file")
+	}
+
+	authorMetadata.Token = auth.Token
+	authorMetadata.Expire = auth.Expires
+	authorMetadata.Refresh = auth.RefreshToken
+
+	data, err := json.MarshalIndent(authorMetadata, "", " ")
+	if err != nil {
+		return errors.New("Unable to indent author rc file")
+	}
+
+	err = os.WriteFile(filepath.Join(sublime.HomeDir, ".sublime/rc.json"), data, 0644)
+	if err != nil {
+		return errors.New("Unable to update author rc file")
+	}
+
+	return nil
 }
