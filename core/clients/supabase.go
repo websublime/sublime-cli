@@ -49,6 +49,7 @@ const (
 type Supabase struct {
 	BaseURL     string
 	ApiKey      string
+	ApiToken    string
 	Environment string
 	HTTPClient  *http.Client
 }
@@ -59,10 +60,11 @@ func escapeQuotes(s string) string {
 	return quoteEscaper.Replace(s)
 }
 
-func NewSupabase(baseURL string, supabaseKey string, env string) *Supabase {
+func NewSupabase(baseURL string, supabaseKey string, supabaseToken string, env string) *Supabase {
 	return &Supabase{
 		BaseURL:     baseURL,
 		ApiKey:      supabaseKey,
+		ApiToken:    supabaseToken,
 		Environment: env,
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
@@ -109,7 +111,7 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	uri := fmt.Sprintf("%s/%s/object/%s/%s/%s", ctx.BaseURL, StorageEndpoint, bucket, destination, filepath.Base(file.Name()))
 
 	req, _ := http.NewRequest("POST", uri, payload)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
 	req.Header.Add("x-upsert", "true")
 	req.Header.Add("Content-Type", writer.FormDataContentType())
@@ -152,7 +154,7 @@ func (ctx *Supabase) Register(email string, password string, name string, userna
 		return "", err
 	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
 
 	response, err := ctx.HTTPClient.Do(req)
@@ -192,7 +194,7 @@ func (ctx *Supabase) Login(email string, password string) (string, error) {
 		return "", err
 	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
 
 	response, err := ctx.HTTPClient.Do(req)
@@ -231,7 +233,37 @@ func (ctx *Supabase) RefreshToken(token string) (string, error) {
 		return "", err
 	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) GetUserOrganizations() (string, error) {
+	uri := fmt.Sprintf("%s/%s/organization?select=*", ctx.BaseURL, RestEndpoint)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
 
 	response, err := ctx.HTTPClient.Do(req)

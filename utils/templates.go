@@ -67,6 +67,12 @@ type SublimeJsonVars struct {
 	Organization string
 }
 
+type ReadmeVars struct {
+	Name         string
+	Repo         string
+	Organization string
+}
+
 type ReleaseYamlVars struct {
 	Username string
 	Email    string

@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -102,7 +103,8 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		libType = "packages"
 	}
 
-	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
+	scope := fmt.Sprintf("@%s", sublime.Organization)
+	libNamespace := strings.Join([]string{scope, slug.Make(ctx.Name)}, "/")
 	libDirectory := filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
 	viteRel, _ := filepath.Rel(libDirectory, filepath.Join(sublime.Root, "libs/vite"))
 
@@ -160,7 +162,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		Namespace: libNamespace,
 		Repo:      sublime.Repo,
 		Name:      slug.Make(ctx.Name),
-		Scope:     sublime.Scope,
+		Scope:     scope,
 		Type:      libType,
 	}, "{{", "}}"))
 
@@ -183,7 +185,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
 	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
-		Scope: sublime.Scope,
+		Scope: scope,
 		Name:  slug.Make(ctx.Name),
 	}, "{{", "}}"))
 
@@ -191,7 +193,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	sublime.Packages = append(sublime.Packages, core.Packages{
 		Name:  slug.Make(ctx.Name),
-		Scope: sublime.Scope,
+		Scope: scope,
 		Type:  core.PackageType(ctx.Type),
 	})
 
@@ -205,7 +207,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
 		Path: filepath.Join("./", libType, slug.Make(ctx.Name)),
-		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
+		Name: filepath.Join(scope, slug.Make(ctx.Name)),
 	})
 
 	tsconfig, _ := json.MarshalIndent(tsConfigBase, "", " ")

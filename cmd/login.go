@@ -67,7 +67,7 @@ func (ctx *LoginCommand) Run(cmd *cobra.Command) {
 	}
 	login := &core.Auth{}
 
-	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
+	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
 	response, err := supabase.Login(email, ctx.Password)
 	if err != nil {
 		color.Error.Println("Error login author:", err)

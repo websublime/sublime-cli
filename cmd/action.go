@@ -115,6 +115,7 @@ func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
 func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 	color.Info.Println("🥼 Starting Feature Artifacts creation")
 	sublime := core.GetSublime()
+	scope := fmt.Sprintf("@%s", sublime.Organization)
 
 	var pkgs = []core.Packages{}
 
@@ -129,7 +130,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 	var supabase *clients.Supabase
 	var github *clients.Github
 	if ctx.Client == "supabase" {
-		supabase = clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
+		supabase = clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Key, ctx.Environment)
 	} else if ctx.Client == "github" {
 		github = clients.NewGithub(fmt.Sprintf("https://api.github.com/repos/%s/contents", ctx.BaseUrl), ctx.Key, ctx.Environment)
 	}
@@ -199,7 +200,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 		manifestJson, _ := FileTemplates.ReadFile("templates/manifest.json")
 		manifestFile := core.CreateManifest(manifestJson, core.Manifest{
 			Name:    pkgs[key].Name,
-			Scope:   sublime.Scope,
+			Scope:   scope,
 			Repo:    sublime.Repo,
 			Version: pkgJson.Version,
 			Scripts: &core.ManifestScripts{

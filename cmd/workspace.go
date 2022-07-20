@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/spf13/cobra"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/core/clients"
 	"github.com/websublime/sublime-cli/utils"
 )
 
@@ -55,7 +57,7 @@ func init() {
 	workspaceCmd.Flags().StringVar(&cmd.Repo, "repo", "", "Github repo shortcut (you/repo) [REQUIRED]")
 	workspaceCmd.MarkFlagRequired("repo")
 
-	workspaceCmd.Flags().StringVar(&cmd.Repo, "organization", "", "Github organization name [REQUIRED]")
+	workspaceCmd.Flags().StringVar(&cmd.Organization, "organization", "", "Github organization name [REQUIRED]")
 	workspaceCmd.MarkFlagRequired("organization")
 
 	workspaceCmd.Flags().StringVar(&cmd.Username, "username", "", "Git username")
@@ -66,6 +68,43 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "workspace",
 		Short: "Create a workspace project",
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			//TODO: check organization is valid for the user
+			sublime := core.GetSublime()
+			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
+			response, err := supabase.GetUserOrganizations()
+			if err != nil {
+				color.Error.Println("User not found in this organization")
+				cobra.CheckErr(err)
+			}
+
+			orgs := []core.Organization{}
+
+			err = json.Unmarshal([]byte(response), &orgs)
+			if err != nil {
+				color.Error.Println("Unable to parse organization")
+				cobra.CheckErr(err)
+			}
+
+			organization, err := cmd.Flags().GetString("organization")
+			if err != nil {
+				color.Error.Println("Organization parameter invalid")
+				cobra.CheckErr(err)
+			}
+
+			var isUserOrganization bool = false
+			for i := range orgs {
+				if orgs[i].Name == organization {
+					isUserOrganization = true
+					break
+				}
+			}
+
+			if !isUserOrganization {
+				color.Error.Println("User is not valid to this organization:", organization)
+				cobra.CheckErr(errors.New("Invalid organization user"))
+			}
+		},
 		Run: func(cmd *cobra.Command, _ []string) {
 			cmdWsp.Run(cmd)
 			cmdWsp.Workflows()
@@ -77,6 +116,7 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 
 func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("🚀 Creating new workspace: ", ctx.Name)
+	sublime := core.GetSublime()
 
 	if strings.HasPrefix(ctx.Organization, "@") {
 		color.Error.Println("Please provide a valid github organization name")
@@ -86,7 +126,22 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	rootNamespace := strings.Join([]string{fmt.Sprintf("@%s", ctx.Organization), slug.Make(ctx.Name)}, "/")
 	viteNamespace := strings.Join([]string{ctx.Organization, "vite"}, "/")
 
-	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
+	var username string
+	var email string
+
+	if ctx.Username != "" {
+		username = ctx.Username
+	} else {
+		username = sublime.Author.Username
+	}
+
+	if ctx.Email != "" {
+		email = ctx.Email
+	} else {
+		email = sublime.Author.Email
+	}
+
+	workspaceDir := filepath.Join(sublime.Root, slug.Make(ctx.Name))
 	if err := os.Mkdir(workspaceDir, 0755); err != nil {
 		color.Error.Printf("Error creating workspace: %s", ctx.Name)
 		cobra.CheckErr(err)
@@ -126,6 +181,11 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 		color.Error.Println("Unable to read sublime.json template file")
 		cobra.CheckErr(err)
 	}
+	readmeConfigJson, err := FileTemplates.ReadFile("templates/readme.md")
+	if err != nil {
+		color.Error.Println("Unable to read readme.md template file")
+		cobra.CheckErr(err)
+	}
 
 	pkgJsonFile, err := os.Create(filepath.Join(workspaceDir, "package.json"))
 	if err != nil {
@@ -135,8 +195,8 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
 		Namespace: rootNamespace,
 		Repo:      ctx.Repo,
-		Username:  ctx.Username,
-		Email:     ctx.Email,
+		Username:  username,
+		Email:     email,
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Package json created and configured!")
@@ -188,10 +248,22 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Sublime json created and configured!")
+
+	readmeFile, err := os.Create(filepath.Join(workspaceDir, "README.md"))
+	if err != nil {
+		color.Error.Println("Unable to create README.md file")
+		cobra.CheckErr(err)
+	}
+	readmeFile.WriteString(utils.ProcessString(string(readmeConfigJson), &utils.ReadmeVars{
+		Name:         ctx.Name,
+		Repo:         ctx.Repo,
+		Organization: ctx.Organization,
+	}, "{{", "}}"))
+
+	color.Info.Println("❤️‍🔥 Readme file created!")
 }
 
-// @deprecated
-// Action will be deploy to websublime cloud service
+// Action will publish artifacts to websublime cloud service
 func (ctx *WorkSpaceCommand) Workflows() {
 	workspaceDir := filepath.Join(core.GetSublime().Root, slug.Make(ctx.Name))
 

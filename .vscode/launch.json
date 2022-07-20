@@ -35,11 +35,11 @@
             "args": [
                 "workspace",
                 "--name", 
-                "ui-libs", 
-                "--organization", 
+                "sublime-ui", 
+                "--organization",
                 "websublime", 
                 "--repo",
-                "websublime/ws-ui-libs", 
+                "websublime/sublime-ui", 
             ]
         },
         {
@@ -50,7 +50,7 @@
             "program": "${workspaceFolder}",
             "args": [
                 "--root", 
-                "./ui-libs",
+                "./sublime-ui",
                 "create",
                 "--name", 
                 "ui-bomb", 

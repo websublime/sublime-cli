@@ -46,14 +46,14 @@ type Packages struct {
 }
 
 type Sublime struct {
-	Name      string           `json:"name"`
-	Scope     string           `json:"scope"`
-	Repo      string           `json:"repo"`
-	Namespace string           `json:"namespace"`
-	Root      string           `json:"root"`
-	HomeDir   string           `json:"homeDir"`
-	Packages  []Packages       `json:"packages"`
-	Author    utils.RcJsonVars `json:"author"`
+	Name         string           `json:"name"`
+	Organization string           `json:"organization"`
+	Repo         string           `json:"repo"`
+	Namespace    string           `json:"namespace"`
+	Root         string           `json:"root"`
+	HomeDir      string           `json:"homeDir"`
+	Packages     []Packages       `json:"packages"`
+	Author       utils.RcJsonVars `json:"author"`
 }
 
 type TsconfigBase struct {

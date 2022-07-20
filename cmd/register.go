@@ -73,7 +73,7 @@ func NewRegisterCmd(cmdReg *RegisterCommand) *cobra.Command {
 func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("👣 Start registration process.")
 
-	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
+	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
 	register := &core.Register{}
 
 	response, err := supabase.Register(ctx.Email, ctx.Password, ctx.Name, ctx.Username)
@@ -122,6 +122,7 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	tabular.AppendRow(table.Row{"Author", ctx.Name})
 	tabular.AppendRow(table.Row{"Author email", ctx.Email})
 	tabular.AppendFooter(table.Row{"Please check your email and finalize the registration process."})
+	tabular.AppendFooter(table.Row{"If you are creating a new workspace for the first time please go to the platform and create the organization."})
 
 	fmt.Println(tabular.Render())
 }

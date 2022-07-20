@@ -71,7 +71,7 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		executionFlagsValidation(rootCmd)
-		executionExpirationValidation(rootCmd)
+		//executionExpirationValidation(rootCmd)
 		initConfig(rootCommand)
 	})
 
@@ -129,7 +129,7 @@ func executionExpirationValidation(_ *cobra.Command) {
 		if now.After(expiration) {
 			color.Warn.Println("⛑ Your token is expired. Starting refresh token")
 
-			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, "production")
+			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
 			response, err := supabase.RefreshToken(sublime.Author.Refresh)
 			if err != nil {
 				color.Error.Println("Unable to refresh token. Please make login command", err)
