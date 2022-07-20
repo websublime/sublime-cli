@@ -36,12 +36,8 @@
                 "workspace",
                 "--name", 
                 "ui-libs", 
-                "--scope", 
-                "@ws", 
-                "--username", 
-                "miguelramos", 
-                "--email", 
-                "miguel@websublime.dev",
+                "--organization", 
+                "websublime", 
                 "--repo",
                 "websublime/ws-ui-libs", 
             ]
@@ -82,8 +78,6 @@
                 "miguelramos", 
                 "--email", 
                 "miguel@websublime.dev",
-                "--organization",
-                "websublime",
                 "--password",
                 "my_secret_password"
             ]

@@ -44,3 +44,33 @@ type Auth struct {
 	Expires      int64  `json:"expires_in"`
 	RefreshToken string `json:"refresh_token"`
 }
+
+type SignUpData struct {
+	Username string `json:"username"`
+	Name     string `json:"name"`
+}
+
+type SignUp struct {
+	Email    string     `json:"email"`
+	Password string     `json:"password"`
+	Data     SignUpData `json:"data,omitempty"`
+}
+
+type Refresh struct {
+	Token string `json:"refresh_token"`
+}
+
+type PackageJson struct {
+	Name            string            `json:"name"`
+	Version         string            `json:"version"`
+	Description     string            `json:"description"`
+	Main            string            `json:"main"`
+	Typings         string            `json:"typings"`
+	Module          string            `json:"module"`
+	Scripts         map[string]string `json:"scripts"`
+	Keywords        []string          `json:"keywords"`
+	Author          string            `json:"author"`
+	License         string            `json:"license"`
+	Dependencies    map[string]string `json:"dependencies"`
+	DevDependencies map[string]string `json:"devDependencies"`
+}

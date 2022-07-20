@@ -60,11 +60,11 @@ type ViteJsonVars struct {
 }
 
 type SublimeJsonVars struct {
-	Name      string
-	Scope     string
-	Repo      string
-	Namespace string
-	Root      string
+	Name         string
+	Repo         string
+	Namespace    string
+	Root         string
+	Organization string
 }
 
 type ReleaseYamlVars struct {

@@ -159,7 +159,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 		libFolder := filepath.Join(sublime.Root, libDir, pkgs[key].Name)
 		distFolder := filepath.Join(libFolder, "dist")
 
-		pkgJson := &utils.PackageJson{}
+		pkgJson := &core.PackageJson{}
 		data, _ := os.ReadFile(filepath.Join(libFolder, "package.json"))
 		json.Unmarshal(data, &pkgJson)
 

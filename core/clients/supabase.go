@@ -36,6 +36,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/websublime/sublime-cli/core"
 	"github.com/websublime/sublime-cli/utils"
 )
 
@@ -50,21 +51,6 @@ type Supabase struct {
 	ApiKey      string
 	Environment string
 	HTTPClient  *http.Client
-}
-
-type SignUpData struct {
-	Username string `json:"username"`
-	Name     string `json:"name"`
-}
-
-type SignUp struct {
-	Email    string     `json:"email"`
-	Password string     `json:"password"`
-	Data     SignUpData `json:"data,omitempty"`
-}
-
-type Refresh struct {
-	Token string `json:"refresh_token"`
 }
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
@@ -146,10 +132,10 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 }
 
 func (ctx *Supabase) Register(email string, password string, name string, username string) (string, error) {
-	signup := &SignUp{
+	signup := &core.SignUp{
 		Email:    email,
 		Password: password,
-		Data: SignUpData{
+		Data: core.SignUpData{
 			Username: username,
 			Name:     name,
 		},
@@ -189,7 +175,7 @@ func (ctx *Supabase) Register(email string, password string, name string, userna
 }
 
 func (ctx *Supabase) Login(email string, password string) (string, error) {
-	login := &SignUp{
+	login := &core.SignUp{
 		Email:    email,
 		Password: password,
 	}
@@ -229,7 +215,7 @@ func (ctx *Supabase) Login(email string, password string) (string, error) {
 }
 
 func (ctx *Supabase) RefreshToken(token string) (string, error) {
-	refresh := &Refresh{
+	refresh := &core.Refresh{
 		Token: token,
 	}
 
