@@ -90,3 +90,13 @@ type Workspace struct {
 	CreatedAt      string `json:"created_at,omitempty"`
 	CreatedBy      string `json:"created_by,omitempty"`
 }
+
+type WorkspacePackage struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Type        string `json:"type,omitempty"`
+	WorkspaceID string `json:"workspace_id,omitempty"`
+	CreatedAt   string `json:"created_at,omitempty"`
+	CreatedBy   string `json:"created_by,omitempty"`
+}

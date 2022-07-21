@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -37,10 +38,12 @@ import (
 )
 
 type CreateCommand struct {
-	Name      string
-	Type      string
-	Template  string
-	Templates []LibTemplate
+	Name        string
+	Type        string
+	Template    string
+	Description string
+	PackageDir  string
+	Templates   []LibTemplate
 }
 
 type LibTemplate struct {
@@ -78,10 +81,10 @@ func init() {
 	createCmd.MarkFlagRequired("name")
 
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
-	createCmd.MarkFlagRequired("name")
+	createCmd.MarkFlagRequired("type")
 
 	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template: (lit, solid, vue, typescript)")
-	createCmd.MarkFlagRequired("template")
+	createCmd.Flags().StringVar(&cmd.Description, "description", "", "Description about your package")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
@@ -96,6 +99,8 @@ func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 }
 
 func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
+	color.Info.Println("🛢 Init package creation")
+
 	sublime := core.GetSublime()
 	var libType = "libs"
 
@@ -103,10 +108,11 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		libType = "packages"
 	}
 
+	ctx.PackageDir = filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
+
 	scope := fmt.Sprintf("@%s", sublime.Organization)
 	libNamespace := strings.Join([]string{scope, slug.Make(ctx.Name)}, "/")
-	libDirectory := filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
-	viteRel, _ := filepath.Rel(libDirectory, filepath.Join(sublime.Root, "libs/vite"))
+	viteRel, _ := filepath.Rel(ctx.PackageDir, filepath.Join(sublime.Root, "libs/vite"))
 
 	var template = ""
 	var link = ""
@@ -119,18 +125,16 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	}
 
 	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or typescript")
-		cobra.CheckErr("Template error")
+		ctx.ErrorOut(errors.New("Template error"), "Unable to determine template. Valid types are: lit, solid, vue or typescript")
 	}
 
-	gitCmd := exec.Command("git", "clone", link, libDirectory)
+	gitCmd := exec.Command("git", "clone", link, ctx.PackageDir)
 	_, err := gitCmd.Output()
 	if err != nil {
-		color.Error.Println("Unable to clone: ", template, " template type")
-		cobra.CheckErr(err)
+		ctx.ErrorOut(err, fmt.Sprintf("Unable to clone: %s template type ", template))
 	}
 
-	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
+	color.Success.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
 	var libPackageJson = "templates/lib-package.json"
 	var libTsconfigJson = "templates/tsconfig-lib.json"
@@ -157,7 +161,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	tsConfigJson, _ := FileTemplates.ReadFile(libTsconfigJson)
 	viteConfigJson, _ := FileTemplates.ReadFile(libViteConfigJson)
 
-	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
+	pkgJsonFile, _ := os.Create(filepath.Join(ctx.PackageDir, "package.json"))
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
 		Namespace: libNamespace,
 		Repo:      sublime.Repo,
@@ -168,14 +172,14 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	color.Info.Println("❤️‍🔥 Package json created and configured!")
 
-	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
+	apiExtractorFile, _ := os.Create(filepath.Join(ctx.PackageDir, "api-extractor.json"))
 	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
 		Name: slug.Make(ctx.Name),
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Api extractor created and configured!")
 
-	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
+	tsConfigFile, _ := os.Create(filepath.Join(ctx.PackageDir, "tsconfig.json"))
 	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
 		Namespace: libNamespace,
 		Vite:      viteRel,
@@ -183,7 +187,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
 
-	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
+	viteConfigFile, _ := os.Create(filepath.Join(ctx.PackageDir, "vite.config.js"))
 	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
 		Scope: scope,
 		Name:  slug.Make(ctx.Name),
@@ -215,7 +219,7 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 
 	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
 
-	os.RemoveAll(filepath.Join(libDirectory, ".git"))
+	os.RemoveAll(filepath.Join(ctx.PackageDir, ".git"))
 }
 
 func (ctx *CreateCommand) YarnLink() {
@@ -231,4 +235,13 @@ func (ctx *CreateCommand) YarnLink() {
 	}
 
 	color.Success.Println("✅ Your app is updated. Yarn performed link on packages.")
+}
+
+func (ctx *CreateCommand) ErrorOut(err error, msg string) {
+	if ctx.PackageDir != "" {
+		os.RemoveAll(ctx.PackageDir)
+	}
+
+	color.Error.Println(msg, err)
+	cobra.CheckErr(err)
 }
