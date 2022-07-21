@@ -48,6 +48,7 @@ type Packages struct {
 type Sublime struct {
 	Name         string           `json:"name"`
 	Organization string           `json:"organization"`
+	ID           string           `json:"id"`
 	Repo         string           `json:"repo"`
 	Namespace    string           `json:"namespace"`
 	Root         string           `json:"root"`

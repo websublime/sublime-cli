@@ -284,3 +284,46 @@ func (ctx *Supabase) GetUserOrganizations() (string, error) {
 
 	return string(body), err
 }
+
+func (ctx *Supabase) CreateOrganizationWorkspace(name string, repo string, description string, orgID string) (string, error) {
+	workspace := &core.Workspace{
+		Name:           name,
+		Repo:           repo,
+		Description:    description,
+		OrganizationID: orgID,
+	}
+
+	payload, err := json.Marshal(workspace)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/workspaces", ctx.BaseURL, RestEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+	req.Header.Add("Prefer", "return=representation")
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}

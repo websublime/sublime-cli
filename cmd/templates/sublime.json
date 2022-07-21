@@ -5,6 +5,6 @@
   "root": "{{ .Root }}",
   "organization": "{{ .Organization }}",
   "id": "{{ .ID }}",
-  "description": "",
+  "description": "{{ .Description }}",
   "packages": []
 }
