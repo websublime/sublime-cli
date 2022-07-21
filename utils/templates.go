@@ -65,6 +65,7 @@ type SublimeJsonVars struct {
 	Namespace    string
 	Root         string
 	Organization string
+	ID           string
 }
 
 type ReadmeVars struct {

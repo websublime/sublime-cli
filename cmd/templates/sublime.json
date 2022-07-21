@@ -4,5 +4,7 @@
   "namespace": "{{ .Namespace }}",
   "root": "{{ .Root }}",
   "organization": "{{ .Organization }}",
+  "id": "{{ .ID }}",
+  "description": "",
   "packages": []
 }

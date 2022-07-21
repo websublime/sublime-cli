@@ -71,7 +71,7 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		executionFlagsValidation(rootCmd)
-		//executionExpirationValidation(rootCmd)
+		executionExpirationValidation(rootCmd)
 		initConfig(rootCommand)
 	})
 

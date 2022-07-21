@@ -22,7 +22,11 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -78,6 +82,15 @@ func (ctx *LoginCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("👣 Updating author rc file.")
 
 	json.Unmarshal([]byte(response), &login)
+
+	tokenStrings := strings.Split(login.Token, ".")
+	claimString, _ := base64.StdEncoding.DecodeString(tokenStrings[1])
+	regex := regexp.MustCompile(`(?m)(exp*.":)(\d*)`)
+
+	parts := regex.FindStringSubmatch(string(claimString))
+	expires, _ := strconv.ParseInt(parts[2], 10, 64)
+
+	login.Expires = expires
 
 	err = sublime.UpdateAuthorMetadata(login)
 	if err != nil {

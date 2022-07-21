@@ -69,7 +69,6 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 		Use:   "workspace",
 		Short: "Create a workspace project",
 		PreRun: func(cmd *cobra.Command, _ []string) {
-			//TODO: check organization is valid for the user
 			sublime := core.GetSublime()
 			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
 			response, err := supabase.GetUserOrganizations()
@@ -124,7 +123,7 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	}
 
 	rootNamespace := strings.Join([]string{fmt.Sprintf("@%s", ctx.Organization), slug.Make(ctx.Name)}, "/")
-	viteNamespace := strings.Join([]string{ctx.Organization, "vite"}, "/")
+	viteNamespace := strings.Join([]string{fmt.Sprintf("@%s", ctx.Organization), "vite"}, "/")
 
 	var username string
 	var email string
@@ -245,6 +244,7 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 		Repo:         ctx.Repo,
 		Root:         "./",
 		Organization: ctx.Organization,
+		ID:           "",
 	}, "{{", "}}"))
 
 	color.Info.Println("❤️‍🔥 Sublime json created and configured!")
