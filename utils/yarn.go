@@ -32,3 +32,10 @@ func YarnInstall(path string) (string, error) {
 
 	return strings.Replace(string(output), "\n", "", -1), err
 }
+
+func YarnBuild(path string) (string, error) {
+	yarnCmd := exec.Command("yarn", "--cwd", path, "build")
+	output, err := yarnCmd.Output()
+
+	return strings.Replace(string(output), "\n", "", -1), err
+}

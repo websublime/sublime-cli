@@ -81,22 +81,19 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
 			response, err := supabase.GetUserOrganizations()
 			if err != nil {
-				color.Error.Println("User not found in this organization")
-				cobra.CheckErr(err)
+				cmdWsp.ErrorOut(err, "User not found in this organization")
 			}
 
 			orgs := []core.Organization{}
 
 			err = json.Unmarshal([]byte(response), &orgs)
 			if err != nil {
-				color.Error.Println("Unable to parse organization")
-				cobra.CheckErr(err)
+				cmdWsp.ErrorOut(err, "Unable to parse organization")
 			}
 
 			organization, err := cmd.Flags().GetString("organization")
 			if err != nil {
-				color.Error.Println("Organization parameter invalid")
-				cobra.CheckErr(err)
+				cmdWsp.ErrorOut(err, "Organization parameter invalid")
 			}
 
 			var isUserOrganization bool = false
@@ -109,8 +106,7 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 			}
 
 			if !isUserOrganization {
-				color.Error.Println("User is not valid to this organization:", organization)
-				cobra.CheckErr(errors.New("Invalid organization user"))
+				cmdWsp.ErrorOut(errors.New("Invalid organization user"), "User is not valid to this organization")
 			}
 		},
 		Run: func(cmd *cobra.Command, _ []string) {
@@ -118,6 +114,7 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 			cmdWsp.Workflows()
 			cmdWsp.InitGit()
 			cmdWsp.InitYarn()
+			cmdWsp.BuildVitePlugin()
 			cmdWsp.CreateCloudWorkspace()
 		},
 	}
@@ -337,13 +334,25 @@ func (ctx *WorkSpaceCommand) InitYarn() {
 	color.Success.Println("❤️‍🔥 Yarn installed.")
 }
 
+// Install all packages thru Yarn
+func (ctx *WorkSpaceCommand) BuildVitePlugin() {
+	color.Info.Println("❤️‍🔥 Building vite plugin")
+
+	_, err := utils.YarnBuild(filepath.Join(ctx.WorkspaceDir, "libs/vite/"))
+	if err != nil {
+		ctx.ErrorOut(err, "Unable to build vite plugin")
+	}
+
+	color.Success.Println("❤️‍🔥 Vite plugin build with success")
+}
+
 // Post the new workspace on organization
 func (ctx *WorkSpaceCommand) CreateCloudWorkspace() {
 	color.Info.Println("❤️‍🔥 Creating workspace on cloud platform")
 	sublime := core.GetSublime()
 
 	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
-	_, err := supabase.CreateOrganizationWorkspace(ctx.Name, ctx.Repo, ctx.Description, sublime.ID)
+	_, err := supabase.CreateOrganizationWorkspace(slug.Make(ctx.Name), ctx.Repo, ctx.Description, sublime.ID)
 	if err != nil {
 		ctx.ErrorOut(err, "Unable to create workspace on cloud")
 	}

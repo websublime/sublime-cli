@@ -285,6 +285,36 @@ func (ctx *Supabase) GetUserOrganizations() (string, error) {
 	return string(body), err
 }
 
+func (ctx *Supabase) FindUserWorkspace(workspace string) (string, error) {
+	uri := fmt.Sprintf("%s/%s/workspaces?name=eq.%s&select=*", ctx.BaseURL, RestEndpoint, workspace)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
 func (ctx *Supabase) CreateOrganizationWorkspace(name string, repo string, description string, orgID string) (string, error) {
 	workspace := &core.Workspace{
 		Name:           name,
