@@ -40,6 +40,7 @@ type RegisterCommand struct {
 	Username string
 	Email    string
 	Password string
+	HomeDir  string
 }
 
 func init() {
@@ -64,6 +65,7 @@ func NewRegisterCmd(cmdReg *RegisterCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "register",
 		Short: "Register author on cloud platform",
+		Long:  "Register command will register you as author on cloud platform and also create you local rc file to use on future workspaces and commands",
 		Run: func(cmd *cobra.Command, _ []string) {
 			cmdReg.Run(cmd)
 		},
@@ -72,14 +74,14 @@ func NewRegisterCmd(cmdReg *RegisterCommand) *cobra.Command {
 
 func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	color.Info.Println("👣 Start registration process.")
+	sublime := core.GetSublime()
 
 	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
 	register := &core.Register{}
 
 	response, err := supabase.Register(ctx.Email, ctx.Password, ctx.Name, ctx.Username)
 	if err != nil {
-		color.Error.Println("Error registering author:", err)
-		cobra.CheckErr(err)
+		ctx.ErrorOut(err, "Error registering author")
 	}
 
 	json.Unmarshal([]byte(response), &register)
@@ -87,31 +89,32 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	color.Success.Println("👣 Author registered with success.")
 	color.Info.Println("👣 Creating user rc file.")
 
-	userDir := filepath.Join(core.GetSublime().HomeDir, ".sublime")
-	if err := os.Mkdir(userDir, 0755); err != nil {
-		color.Error.Println("Error creating rc user directory", err)
-		cobra.CheckErr(err)
+	ctx.HomeDir = filepath.Join(sublime.HomeDir, ".sublime")
+	if err := os.Mkdir(ctx.HomeDir, 0755); err != nil {
+		ctx.HomeDir = ""
+		ctx.ErrorOut(err, "Error creating rc user directory")
 	}
 
 	rcJson, err := FileTemplates.ReadFile("templates/rc-template.json")
 	if err != nil {
-		color.Error.Println("Unable to read rc template file:", err)
-		cobra.CheckErr(err)
+		ctx.ErrorOut(err, "Unable to read rc template file")
 	}
 
-	rcFile, err := os.Create(filepath.Join(userDir, "rc.json"))
+	rcFile, err := os.Create(filepath.Join(ctx.HomeDir, "rc.json"))
 	if err != nil {
-		color.Error.Println("Unable to create rc author file:", err)
-		cobra.CheckErr(err)
+		ctx.ErrorOut(err, "Unable to create rc author file")
 	}
 
-	rcFile.WriteString(utils.ProcessString(string(rcJson), &utils.RcJsonVars{
+	_, err = rcFile.WriteString(utils.ProcessString(string(rcJson), &utils.RcJsonVars{
 		Name:     register.Metadata.Name,
 		Username: register.Metadata.Username,
 		Email:    register.Email,
 		Token:    "",
 		ID:       register.Id,
 	}, "{{", "}}"))
+	if err != nil {
+		ctx.ErrorOut(err, "Unable to write rc author file")
+	}
 
 	color.Success.Println("👣 Author data persisted with success.")
 	fmt.Println()
@@ -125,4 +128,13 @@ func (ctx *RegisterCommand) Run(cmd *cobra.Command) {
 	tabular.AppendFooter(table.Row{"If you are creating a new workspace for the first time please go to the platform and create the organization."})
 
 	fmt.Println(tabular.Render())
+}
+
+func (ctx *RegisterCommand) ErrorOut(err error, msg string) {
+	if ctx.HomeDir != "" {
+		os.RemoveAll(ctx.HomeDir)
+	}
+
+	color.Error.Println(msg, err)
+	cobra.CheckErr(err)
 }

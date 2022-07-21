@@ -153,6 +153,7 @@ func (ctx *WorkSpaceCommand) Run(cmd *cobra.Command) {
 	ctx.WorkspaceDir = filepath.Join(sublime.Root, slug.Make(ctx.Name))
 
 	if err := os.Mkdir(ctx.WorkspaceDir, 0755); err != nil {
+		ctx.WorkspaceDir = ""
 		ctx.ErrorOut(err, fmt.Sprintf("Error creating workspace: %s", ctx.Name))
 	}
 

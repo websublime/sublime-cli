@@ -22,10 +22,14 @@ THE SOFTWARE.
 package core
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -155,8 +159,15 @@ func (ctx *Sublime) UpdateAuthorMetadata(auth *Auth) error {
 		return errors.New("Unable to parse author rc file")
 	}
 
+	tokenStrings := strings.Split(auth.Token, ".")
+	claimString, _ := base64.StdEncoding.DecodeString(tokenStrings[1])
+	regex := regexp.MustCompile(`(?m)(exp*.":)(\d*)`)
+
+	parts := regex.FindStringSubmatch(string(claimString))
+	expires, _ := strconv.ParseInt(parts[2], 10, 64)
+
 	authorMetadata.Token = auth.Token
-	authorMetadata.Expire = auth.Expires
+	authorMetadata.Expire = expires
 	authorMetadata.Refresh = auth.RefreshToken
 
 	data, err := json.MarshalIndent(authorMetadata, "", " ")
