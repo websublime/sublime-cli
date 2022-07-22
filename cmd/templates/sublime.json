@@ -1,8 +1,0 @@
-{
-  "name": "{{ .Name }}",
-  "scope": "{{ .Scope }}",
-  "repo": "{{ .Repo }}",
-  "namespace": "{{ .Namespace }}",
-  "root": "{{ .Root }}",
-  "packages": []
-}

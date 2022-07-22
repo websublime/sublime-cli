@@ -35,15 +35,11 @@
             "args": [
                 "workspace",
                 "--name", 
-                "ui-libs", 
-                "--scope", 
-                "@ws", 
-                "--username", 
-                "miguelramos", 
-                "--email", 
-                "miguel@websublime.dev",
+                "sublime-ui", 
+                "--organization",
+                "websublime", 
                 "--repo",
-                "websublime/ws-ui-libs", 
+                "websublime/sublime-ui", 
             ]
         },
         {
@@ -54,15 +50,75 @@
             "program": "${workspaceFolder}",
             "args": [
                 "--root", 
-                "./ui-libs",
+                "./sublime-ui",
                 "create",
                 "--name", 
-                "ui-bomb", 
+                "ui-common", 
                 "--type", 
                 "pkg", 
                 "--template", 
                 "lit" 
             ]
+        },
+        {
+            "name": "Launch Register",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {
+                "SUBLIME_API_URL": "https://debvasmsyxrewpmqckdv.supabase.co",
+                "SUBLIME_API_KEY": ""
+            },
+            "args": [
+                "register",
+                "--name", 
+                "Miguel Ramos", 
+                "--username", 
+                "miguelramos", 
+                "--email", 
+                "miguel@websublime.dev",
+                "--password",
+                "my_secret_password"
+            ]
+        },
+        {
+            "name": "Launch Login",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {
+                "SUBLIME_API_URL": "https://debvasmsyxrewpmqckdv.supabase.co",
+                "SUBLIME_API_KEY": ""
+            },
+            "args": [
+                "login",
+                "--email", 
+                "miguel@websublime.dev",
+                "--password",
+                "my_secret_password"
+            ]
+        },
+        {
+            "name": "Launch Status",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--root", 
+                "./sublime-ui",
+                "status"
+            ]
+        },
+        {
+            "name": "Launch Root",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": []
         }
     ]
 }

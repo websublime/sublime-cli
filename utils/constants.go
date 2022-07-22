@@ -19,9 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package utils
 
-import "embed"
+type ErrorType string
 
-//go:embed templates/*
-var FileTemplates embed.FS
+type PackageType string
+
+const (
+	Library PackageType = "lib"
+	Package PackageType = "pkg"
+)
+
+const (
+	ErrorUnknown          ErrorType = "E_UNKNOWN"
+	ErrorOpenFile         ErrorType = "EOPEN_FILE"
+	ErrorReadFile         ErrorType = "EREAD_FILE"
+	ErrorCmdExecution     ErrorType = "ECMD_EXECUTION"
+	ErrorMissingDirectory ErrorType = "EMISSING_DIRECTORY"
+
+	CommandRoot       string = "sublime"
+	CommandFlagRoot   string = "root"
+	CommandFlagConfig string = "config"
+
+	MessageCommandConfigUsage string = "Config file (default is .sublime.json)"
+	MessageCommandRootUsage   string = "Project working dir, default to current dir"
+	MessageCommandRootShort   string = "CLI tool to manage monorepo packages"
+
+	MessageErrorCommandExecution string = "Unable to execute command."
+	MessageErrorCurrentDirectory string = "Unable to get current directory"
+	MessageErrorHomeDirectory    string = "Unable to get user home directory"
+)
