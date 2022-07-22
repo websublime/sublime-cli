@@ -124,8 +124,9 @@ func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, _ []string) {
 			cmdCreate.Run(cmd)
-			cmdCreate.YarnLink()
 			cmdCreate.CreateCloudPackage()
+			cmdCreate.UpdateRepoFiles()
+			cmdCreate.YarnLink()
 		},
 	}
 }
@@ -227,13 +228,37 @@ func (ctx *CreateCommand) Run(cmd *cobra.Command) {
 
 	color.Success.Println("❤️‍🔥 Vite config created and configured!")
 
-	sublime.Packages = append(sublime.Packages, core.Packages{
-		Name:  slug.Make(ctx.Name),
-		Scope: scope,
-		Type:  core.PackageType(ctx.Type),
-	})
+	os.RemoveAll(filepath.Join(ctx.PackageDir, ".git"))
+}
 
-	data, _ := json.MarshalIndent(sublime, "", " ")
+func (ctx *CreateCommand) UpdateRepoFiles() {
+	color.Info.Println("❤️‍🔥 Updating workspace files")
+
+	sublime := core.GetSublime()
+	scope := fmt.Sprintf("@%s", sublime.Organization)
+	var libType = "libs"
+
+	if ctx.Type == "pkg" {
+		libType = "packages"
+	}
+
+	update := map[string]interface{}{
+		"namespace":    sublime.Namespace,
+		"name":         sublime.Name,
+		"repo":         sublime.Repo,
+		"root":         "./",
+		"organization": sublime.Organization,
+		"id":           sublime.ID,
+		"description":  sublime.Description,
+		"packages": append(sublime.Packages, core.Packages{
+			Name:        slug.Make(ctx.Name),
+			Scope:       scope,
+			Type:        core.PackageType(ctx.Type),
+			Description: ctx.Description,
+		}),
+	}
+
+	data, _ := json.MarshalIndent(update, "", " ")
 
 	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
 
@@ -250,8 +275,6 @@ func (ctx *CreateCommand) Run(cmd *cobra.Command) {
 	os.WriteFile(filepath.Join(sublime.Root, "tsconfig.base.json"), tsconfig, 0644)
 
 	color.Success.Println("❤️‍🔥 Tsconfig base updated!")
-
-	os.RemoveAll(filepath.Join(ctx.PackageDir, ".git"))
 }
 
 func (ctx *CreateCommand) YarnLink() {
@@ -264,20 +287,20 @@ func (ctx *CreateCommand) YarnLink() {
 		ctx.ErrorOut(err, fmt.Sprintf("Yarn wasn't installed on: %s", workspaceDir))
 	}
 
-	color.Info.Println("❤️‍🔥 Your app is updated. Yarn performed link on packages.")
+	color.Success.Println("✅ Package created and ready to be used")
 }
 
 func (ctx *CreateCommand) CreateCloudPackage() {
-	color.Info.Println("❤️‍🔥 Creating workspace on cloud platform")
+	color.Info.Println("❤️‍🔥 Creating package on cloud platform")
 	sublime := core.GetSublime()
 
 	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
 	_, err := supabase.CreateWorkspacePackage(ctx.Name, ctx.Type, ctx.Description, ctx.WorkspaceID)
 	if err != nil {
-		ctx.ErrorOut(err, "Unable to create workspace on cloud")
+		ctx.ErrorOut(err, "Unable to create package on cloud. Try again.")
 	}
 
-	color.Success.Println("✅ Package created and ready to be used")
+	color.Success.Println("❤️‍🔥 Package created on cloud")
 }
 
 func (ctx *CreateCommand) ErrorOut(err error, msg string) {

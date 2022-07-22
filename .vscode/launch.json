@@ -53,7 +53,7 @@
                 "./sublime-ui",
                 "create",
                 "--name", 
-                "ui-bomb", 
+                "ui-common", 
                 "--type", 
                 "pkg", 
                 "--template", 
@@ -98,6 +98,18 @@
                 "miguel@websublime.dev",
                 "--password",
                 "my_secret_password"
+            ]
+        },
+        {
+            "name": "Launch Status",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--root", 
+                "./sublime-ui",
+                "status"
             ]
         },
         {

@@ -181,7 +181,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 				Esm:  fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(pkgJson.Module)),
 			},
 			Styles: make([]string, 0),
-			Docs:   fmt.Sprintf("https://websublime.dev/%s/%s", sublime.Namespace, pkgs[key].Name),
+			Docs:   fmt.Sprintf("https://websublime.dev/organization/%s/%s/%s", sublime.Organization, sublime.Name, pkgs[key].Name),
 		})
 
 		var manifestDestination = ""

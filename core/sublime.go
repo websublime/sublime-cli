@@ -44,9 +44,10 @@ const (
 )
 
 type Packages struct {
-	Name  string      `json:"name"`
-	Scope string      `json:"scope"`
-	Type  PackageType `json:"type"`
+	Name        string      `json:"name"`
+	Scope       string      `json:"scope"`
+	Type        PackageType `json:"type"`
+	Description string      `json:"description"`
 }
 
 type Sublime struct {
@@ -54,11 +55,12 @@ type Sublime struct {
 	Organization string           `json:"organization"`
 	ID           string           `json:"id"`
 	Repo         string           `json:"repo"`
+	Description  string           `json:"description"`
 	Namespace    string           `json:"namespace"`
 	Root         string           `json:"root"`
-	HomeDir      string           `json:"homeDir"`
+	HomeDir      string           `json:"homeDir,omitempty"`
 	Packages     []Packages       `json:"packages"`
-	Author       utils.RcJsonVars `json:"author"`
+	Author       utils.RcJsonVars `json:"author,omitempty"`
 }
 
 type TsconfigBase struct {
