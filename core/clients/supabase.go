@@ -23,6 +23,8 @@ package clients
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,17 +36,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/websublime/sublime-cli/core"
 	"github.com/websublime/sublime-cli/utils"
 )
 
 const (
-	AuthEndpoint = "auth/v1"
-	RestEndpoint = "rest/v1"
+	AuthEndpoint    = "auth/v1"
+	RestEndpoint    = "rest/v1"
+	StorageEndpoint = "storage/v1"
 )
 
 type Supabase struct {
 	BaseURL     string
 	ApiKey      string
+	ApiToken    string
 	Environment string
 	HTTPClient  *http.Client
 }
@@ -55,10 +60,11 @@ func escapeQuotes(s string) string {
 	return quoteEscaper.Replace(s)
 }
 
-func NewSupabase(baseURL string, supabaseKey string, env string) *Supabase {
+func NewSupabase(baseURL string, supabaseKey string, supabaseToken string, env string) *Supabase {
 	return &Supabase{
 		BaseURL:     baseURL,
 		ApiKey:      supabaseKey,
+		ApiToken:    supabaseToken,
 		Environment: env,
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
@@ -102,10 +108,10 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 
 	writer.Close()
 
-	uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
+	uri := fmt.Sprintf("%s/%s/object/%s/%s/%s", ctx.BaseURL, StorageEndpoint, bucket, destination, filepath.Base(file.Name()))
 
 	req, _ := http.NewRequest("POST", uri, payload)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
 	req.Header.Add("x-upsert", "true")
 	req.Header.Add("Content-Type", writer.FormDataContentType())
@@ -125,4 +131,426 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	}
 
 	return string(body)
+}
+
+func (ctx *Supabase) Register(email string, password string, name string, username string) (string, error) {
+	signup := &core.SignUp{
+		Email:    email,
+		Password: password,
+		Data: core.SignUpData{
+			Username: username,
+			Name:     name,
+		},
+	}
+	payload, err := json.Marshal(signup)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) Login(email string, password string) (string, error) {
+	login := &core.SignUp{
+		Email:    email,
+		Password: password,
+	}
+
+	payload, err := json.Marshal(login)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/token?grant_type=password", ctx.BaseURL, AuthEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) RefreshToken(token string) (string, error) {
+	refresh := &core.Refresh{
+		Token: token,
+	}
+
+	payload, err := json.Marshal(refresh)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/token?grant_type=refresh_token", ctx.BaseURL, AuthEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) GetUserOrganizations() (string, error) {
+	uri := fmt.Sprintf("%s/%s/organization?select=*", ctx.BaseURL, RestEndpoint)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) GetOrganizationByUser(userID string) (string, error) {
+	uri := fmt.Sprintf("%s/%s/organization_users?user_id=eq.%s&select=organization(id,name,created_at)", ctx.BaseURL, RestEndpoint, userID)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) GetWorkspaceByOrganization(orgID string) (string, error) {
+	uri := fmt.Sprintf("%s/%s/workspaces?organization_id=eq.%s&select=*", ctx.BaseURL, RestEndpoint, orgID)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) FindUserWorkspace(workspace string) (string, error) {
+	uri := fmt.Sprintf("%s/%s/workspaces?name=eq.%s&select=*", ctx.BaseURL, RestEndpoint, workspace)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) CreateOrganizationWorkspace(name string, repo string, description string, orgID string) (string, error) {
+	workspace := &core.Workspace{
+		Name:           name,
+		Repo:           repo,
+		Description:    description,
+		OrganizationID: orgID,
+	}
+
+	payload, err := json.Marshal(workspace)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/workspaces", ctx.BaseURL, RestEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+	req.Header.Add("Prefer", "return=representation")
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) CreateWorkspacePackage(name string, types string, description string, workspaceID string) (string, error) {
+	workspace := &core.WorkspacePackage{
+		Name:        name,
+		Type:        types,
+		Description: description,
+		WorkspaceID: workspaceID,
+	}
+
+	payload, err := json.Marshal(workspace)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/packages", ctx.BaseURL, RestEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+	req.Header.Add("Prefer", "return=representation")
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) UpdateWorkspacePackageVersion(name string, version string) (string, error) {
+	workspace := &core.WorkspacePackage{
+		Version: version,
+	}
+
+	payload, err := json.Marshal(workspace)
+	if err != nil {
+		return "", err
+	}
+
+	uri := fmt.Sprintf("%s/%s/packages?name=eq.%s", ctx.BaseURL, RestEndpoint, name)
+
+	req, err := http.NewRequest("PATCH", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+	req.Header.Add("Prefer", "return=representation")
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) ValidateUserOrganization(organization string) (bool, error) {
+	var isUserOrganization bool = false
+
+	sublime := core.GetSublime()
+
+	response, err := ctx.GetOrganizationByUser(sublime.Author.ID)
+	if err != nil {
+		return isUserOrganization, errors.New("User not found in this organization")
+	}
+
+	organizations := []map[string]core.Organization{}
+
+	err = json.Unmarshal([]byte(response), &organizations)
+	if err != nil {
+		return isUserOrganization, errors.New("Unable to parse organization")
+	}
+
+	for i := range organizations {
+		if organizations[i]["organization"].Name == organization {
+			isUserOrganization = true
+			sublime.ID = organizations[i]["organization"].ID
+			sublime.Organization = organizations[i]["organization"].Name
+			break
+		}
+	}
+
+	return isUserOrganization, nil
+}
+
+func (ctx *Supabase) ValidateWorkspaceOrganization(workspace string) (bool, error) {
+	var isWorkspaceOrganization bool = false
+
+	response, err := ctx.GetWorkspaceByOrganization(workspace)
+	if err != nil {
+		return isWorkspaceOrganization, errors.New("Workspace not found in this organization")
+	}
+
+	workspaces := []core.Workspace{}
+
+	err = json.Unmarshal([]byte(response), &workspaces)
+	if err != nil {
+		return isWorkspaceOrganization, errors.New("Unable to parse workspace")
+	}
+
+	for i := range workspaces {
+		if workspaces[i].Name == workspace {
+			isWorkspaceOrganization = true
+			break
+		}
+	}
+
+	return isWorkspaceOrganization, nil
 }

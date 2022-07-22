@@ -23,13 +23,18 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/core/clients"
+	"github.com/websublime/sublime-cli/utils"
 )
 
 type RootCommand struct {
@@ -65,6 +70,8 @@ func init() {
 	rootCommand := &RootCommand{}
 
 	cobra.OnInitialize(func() {
+		executionFlagsValidation(rootCmd)
+		executionExpirationValidation(rootCmd)
 		initConfig(rootCommand)
 	})
 
@@ -78,6 +85,70 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func executionFlagsValidation(_ *cobra.Command) {
+	flags := os.Args[1:]
+
+	if !(utils.Contains(flags, "action") || utils.Contains(flags, "login") || utils.Contains(flags, "register")) {
+		sublime := core.GetSublime()
+
+		rcFile := filepath.Join(sublime.HomeDir, ".sublime/rc.json")
+		rcJson, err := os.ReadFile(rcFile)
+		if err != nil {
+			color.Error.Println("Authentication file not found. Please register first then login to cloud service.")
+			cobra.CheckErr(err)
+		}
+
+		authorMetadata := &utils.RcJsonVars{}
+
+		err = json.Unmarshal(rcJson, &authorMetadata)
+		if err != nil {
+			color.Error.Println("Unable to parse author rc file", err)
+			cobra.CheckErr(err)
+		}
+
+		if authorMetadata.Token == "" {
+			color.Error.Println("You are not loggedin. Please login using the cli login command")
+			cobra.CheckErr(errors.New("empty token provided"))
+		}
+
+		sublime.SetAuthor(authorMetadata)
+	}
+}
+
+func executionExpirationValidation(_ *cobra.Command) {
+	flags := os.Args[1:]
+
+	if !(utils.Contains(flags, "action") || utils.Contains(flags, "login") || utils.Contains(flags, "register")) {
+		sublime := core.GetSublime()
+
+		now := time.Now()
+		expiration := time.Unix(sublime.Author.Expire, 0)
+
+		if now.After(expiration) {
+			color.Warn.Println("⛑ Your token is expired. Starting refresh token")
+
+			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
+			response, err := supabase.RefreshToken(sublime.Author.Refresh)
+			if err != nil {
+				color.Error.Println("Unable to refresh token. Please make login command", err)
+				cobra.CheckErr(err)
+			}
+
+			login := &core.Auth{}
+
+			json.Unmarshal([]byte(response), &login)
+
+			err = sublime.UpdateAuthorMetadata(login)
+			if err != nil {
+				color.Error.Println(err)
+				cobra.CheckErr(err)
+			}
+
+			color.Success.Println("👣 Author rc file updated.")
+		}
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.

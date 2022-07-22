@@ -28,21 +28,6 @@ import (
 	"strings"
 )
 
-type PackageJson struct {
-	Name            string            `json:"name"`
-	Version         string            `json:"version"`
-	Description     string            `json:"description"`
-	Main            string            `json:"main"`
-	Typings         string            `json:"typings"`
-	Module          string            `json:"module"`
-	Scripts         map[string]string `json:"scripts"`
-	Keywords        []string          `json:"keywords"`
-	Author          string            `json:"author"`
-	License         string            `json:"license"`
-	Dependencies    map[string]string `json:"dependencies"`
-	DevDependencies map[string]string `json:"devDependencies"`
-}
-
 func PathWalk(root string) ([]string, error) {
 	var files []string
 
@@ -239,4 +224,14 @@ func GetMimeType(extension string) string {
 	}
 
 	return fmt.Sprintf("%s; charset=utf-8", mimetype)
+}
+
+func Contains(args []string, lookup string) bool {
+	for _, value := range args {
+		if value == lookup {
+			return true
+		}
+	}
+
+	return false
 }

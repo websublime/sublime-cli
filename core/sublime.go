@@ -22,9 +22,18 @@ THE SOFTWARE.
 package core
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/gookit/color"
+	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/utils"
 )
 
 type PackageType string
@@ -35,18 +44,23 @@ const (
 )
 
 type Packages struct {
-	Name  string      `json:"name"`
-	Scope string      `json:"scope"`
-	Type  PackageType `json:"type"`
+	Name        string      `json:"name"`
+	Scope       string      `json:"scope"`
+	Type        PackageType `json:"type"`
+	Description string      `json:"description"`
 }
 
 type Sublime struct {
-	Name      string     `json:"name"`
-	Scope     string     `json:"scope"`
-	Repo      string     `json:"repo"`
-	Namespace string     `json:"namespace"`
-	Root      string     `json:"root"`
-	Packages  []Packages `json:"packages"`
+	Name         string           `json:"name"`
+	Organization string           `json:"organization"`
+	ID           string           `json:"id"`
+	Repo         string           `json:"repo"`
+	Description  string           `json:"description"`
+	Namespace    string           `json:"namespace"`
+	Root         string           `json:"root"`
+	HomeDir      string           `json:"homeDir,omitempty"`
+	Packages     []Packages       `json:"packages"`
+	Author       utils.RcJsonVars `json:"author,omitempty"`
 }
 
 type TsconfigBase struct {
@@ -78,10 +92,21 @@ type TsConfigReferences struct {
 var sublime = NewSublime()
 
 func NewSublime() *Sublime {
-	dir, _ := os.Getwd()
+	dir, err := os.Getwd()
+	if err != nil {
+		color.Error.Println("Unable to get current directory")
+		cobra.CheckErr(err)
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		color.Error.Println("Unable to get user home directory")
+		cobra.CheckErr(err)
+	}
 
 	return &Sublime{
 		Root:     dir,
+		HomeDir:  homeDir,
 		Packages: []Packages{},
 	}
 }
@@ -91,7 +116,11 @@ func GetSublime() *Sublime {
 }
 
 func (ctx *Sublime) SetRoot(path string) {
-	dir, _ := os.Getwd()
+	dir, err := os.Getwd()
+	if err != nil {
+		color.Error.Println("Unable to get current directory")
+		cobra.CheckErr(err)
+	}
 
 	if filepath.IsAbs(path) {
 		ctx.Root = path
@@ -102,9 +131,56 @@ func (ctx *Sublime) SetRoot(path string) {
 
 func (ctx *Sublime) GetTsconfig() *TsconfigBase {
 	tsconfig := &TsconfigBase{}
-	data, _ := os.ReadFile(filepath.Join(ctx.Root, "tsconfig.base.json"))
+	data, err := os.ReadFile(filepath.Join(ctx.Root, "tsconfig.base.json"))
+
+	if err != nil {
+		color.Error.Println("Unable to get tsconfig.base.json file")
+		cobra.CheckErr(err)
+	}
 
 	json.Unmarshal(data, &tsconfig)
 
 	return tsconfig
+}
+
+func (ctx *Sublime) SetAuthor(metadata *utils.RcJsonVars) {
+	ctx.Author = *metadata
+}
+
+func (ctx *Sublime) UpdateAuthorMetadata(auth *Auth) error {
+	rcFile := filepath.Join(ctx.HomeDir, ".sublime/rc.json")
+	rcJson, err := os.ReadFile(rcFile)
+	if err != nil {
+		return errors.New("Authentication file not found. Please register first then login to cloud service.")
+	}
+
+	authorMetadata := &utils.RcJsonVars{}
+
+	err = json.Unmarshal(rcJson, &authorMetadata)
+	if err != nil {
+		return errors.New("Unable to parse author rc file")
+	}
+
+	tokenStrings := strings.Split(auth.Token, ".")
+	claimString, _ := base64.StdEncoding.DecodeString(tokenStrings[1])
+	regex := regexp.MustCompile(`(?m)(exp*.":)(\d*)`)
+
+	parts := regex.FindStringSubmatch(string(claimString))
+	expires, _ := strconv.ParseInt(parts[2], 10, 64)
+
+	authorMetadata.Token = auth.Token
+	authorMetadata.Expire = expires
+	authorMetadata.Refresh = auth.RefreshToken
+
+	data, err := json.MarshalIndent(authorMetadata, "", " ")
+	if err != nil {
+		return errors.New("Unable to indent author rc file")
+	}
+
+	err = os.WriteFile(filepath.Join(sublime.HomeDir, ".sublime/rc.json"), data, 0644)
+	if err != nil {
+		return errors.New("Unable to update author rc file")
+	}
+
+	return nil
 }

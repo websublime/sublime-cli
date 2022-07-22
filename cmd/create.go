@@ -23,6 +23,8 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,14 +34,18 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/spf13/cobra"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/core/clients"
 	"github.com/websublime/sublime-cli/utils"
 )
 
 type CreateCommand struct {
-	Name      string
-	Type      string
-	Template  string
-	Templates []LibTemplate
+	Name        string
+	Type        string
+	Template    string
+	Description string
+	PackageDir  string
+	WorkspaceID string
+	Templates   []LibTemplate
 }
 
 type LibTemplate struct {
@@ -77,24 +83,67 @@ func init() {
 	createCmd.MarkFlagRequired("name")
 
 	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
-	createCmd.MarkFlagRequired("name")
+	createCmd.MarkFlagRequired("type")
 
 	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template: (lit, solid, vue, typescript)")
-	createCmd.MarkFlagRequired("template")
+	createCmd.Flags().StringVar(&cmd.Description, "description", "", "Description about your package")
 }
 
 func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create",
 		Short: "Create libs or packages from lit, solid, vue or typescript",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmdCreate.CreatPackage((cmd))
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			sublime := core.GetSublime()
+
+			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
+
+			isUserOrganization, err := supabase.ValidateUserOrganization(sublime.Organization)
+			if err != nil {
+				cmdCreate.ErrorOut(err, "Invalid user")
+			}
+
+			if !isUserOrganization {
+				cmdCreate.ErrorOut(errors.New("Invalid organization user"), "User is not valid to this organization")
+			}
+
+			response, err := supabase.FindUserWorkspace(sublime.Name)
+			if err != nil {
+				cmdCreate.ErrorOut(err, "Workspace not found in this organization")
+			}
+
+			workspaces := []core.Workspace{}
+
+			err = json.Unmarshal([]byte(response), &workspaces)
+			if err != nil {
+				cmdCreate.ErrorOut(err, "Unable to parse workspace")
+			}
+
+			var hasWorkspace bool = false
+			for i := range workspaces {
+				if workspaces[i].Name == sublime.Name {
+					hasWorkspace = true
+					cmdCreate.WorkspaceID = workspaces[i].ID
+					break
+				}
+			}
+
+			if !hasWorkspace {
+				cmdCreate.ErrorOut(errors.New("Invalid workspace"), "Workspace is not valid to this organization")
+			}
+		},
+		Run: func(cmd *cobra.Command, _ []string) {
+			cmdCreate.Run(cmd)
+			cmdCreate.CreateCloudPackage()
+			cmdCreate.UpdateRepoFiles()
 			cmdCreate.YarnLink()
 		},
 	}
 }
 
-func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
+func (ctx *CreateCommand) Run(cmd *cobra.Command) {
+	color.Info.Println("🛢 Init package creation")
+
 	sublime := core.GetSublime()
 	var libType = "libs"
 
@@ -102,9 +151,11 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 		libType = "packages"
 	}
 
-	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
-	libDirectory := filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
-	viteRel, _ := filepath.Rel(libDirectory, filepath.Join(sublime.Root, "libs/vite"))
+	ctx.PackageDir = filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
+
+	scope := fmt.Sprintf("@%s", sublime.Organization)
+	libNamespace := strings.Join([]string{scope, slug.Make(ctx.Name)}, "/")
+	viteRel, _ := filepath.Rel(ctx.PackageDir, filepath.Join(sublime.Root, "libs/vite"))
 
 	var template = ""
 	var link = ""
@@ -117,18 +168,16 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	}
 
 	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or typescript")
-		cobra.CheckErr("Template error")
+		ctx.ErrorOut(errors.New("Template error"), "Unable to determine template. Valid types are: lit, solid, vue or typescript")
 	}
 
-	gitCmd := exec.Command("git", "clone", link, libDirectory)
+	gitCmd := exec.Command("git", "clone", link, ctx.PackageDir)
 	_, err := gitCmd.Output()
 	if err != nil {
-		color.Error.Println("Unable to clone: ", template, " template type")
-		cobra.CheckErr(err)
+		ctx.ErrorOut(err, fmt.Sprintf("Unable to clone: %s template type ", template))
 	}
 
-	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
+	color.Success.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
 	var libPackageJson = "templates/lib-package.json"
 	var libTsconfigJson = "templates/tsconfig-lib.json"
@@ -155,65 +204,87 @@ func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
 	tsConfigJson, _ := FileTemplates.ReadFile(libTsconfigJson)
 	viteConfigJson, _ := FileTemplates.ReadFile(libViteConfigJson)
 
-	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
+	pkgJsonFile, _ := os.Create(filepath.Join(ctx.PackageDir, "package.json"))
 	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
 		Namespace: libNamespace,
 		Repo:      sublime.Repo,
 		Name:      slug.Make(ctx.Name),
-		Scope:     sublime.Scope,
+		Scope:     scope,
 		Type:      libType,
 	}, "{{", "}}"))
 
-	color.Info.Println("❤️‍🔥 Package json created and configured!")
+	color.Success.Println("❤️‍🔥 Package json created and configured!")
 
-	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
+	apiExtractorFile, _ := os.Create(filepath.Join(ctx.PackageDir, "api-extractor.json"))
 	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
 		Name: slug.Make(ctx.Name),
 	}, "{{", "}}"))
 
-	color.Info.Println("❤️‍🔥 Api extractor created and configured!")
+	color.Success.Println("❤️‍🔥 Api extractor created and configured!")
 
-	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
+	tsConfigFile, _ := os.Create(filepath.Join(ctx.PackageDir, "tsconfig.json"))
 	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
 		Namespace: libNamespace,
 		Vite:      viteRel,
 	}, "{{", "}}"))
 
-	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
+	color.Success.Println("❤️‍🔥 Tsconfig created and configured!")
 
-	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
+	viteConfigFile, _ := os.Create(filepath.Join(ctx.PackageDir, "vite.config.js"))
 	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
-		Scope: sublime.Scope,
+		Scope: scope,
 		Name:  slug.Make(ctx.Name),
 	}, "{{", "}}"))
 
-	color.Info.Println("❤️‍🔥 Vite config created and configured!")
+	color.Success.Println("❤️‍🔥 Vite config created and configured!")
 
-	sublime.Packages = append(sublime.Packages, core.Packages{
-		Name:  slug.Make(ctx.Name),
-		Scope: sublime.Scope,
-		Type:  core.PackageType(ctx.Type),
-	})
+	os.RemoveAll(filepath.Join(ctx.PackageDir, ".git"))
+}
 
-	data, _ := json.MarshalIndent(sublime, "", " ")
+func (ctx *CreateCommand) UpdateRepoFiles() {
+	color.Info.Println("❤️‍🔥 Updating workspace files")
+
+	sublime := core.GetSublime()
+	scope := fmt.Sprintf("@%s", sublime.Organization)
+	var libType = "libs"
+
+	if ctx.Type == "pkg" {
+		libType = "packages"
+	}
+
+	update := map[string]interface{}{
+		"namespace":    sublime.Namespace,
+		"name":         sublime.Name,
+		"repo":         sublime.Repo,
+		"root":         "./",
+		"organization": sublime.Organization,
+		"id":           sublime.ID,
+		"description":  sublime.Description,
+		"packages": append(sublime.Packages, core.Packages{
+			Name:        slug.Make(ctx.Name),
+			Scope:       scope,
+			Type:        core.PackageType(ctx.Type),
+			Description: ctx.Description,
+		}),
+	}
+
+	data, _ := json.MarshalIndent(update, "", " ")
 
 	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
 
-	color.Info.Println("❤️‍🔥 Sublime json updated!")
+	color.Success.Println("❤️‍🔥 Sublime json updated!")
 
 	tsConfigBase := sublime.GetTsconfig()
 
 	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
 		Path: filepath.Join("./", libType, slug.Make(ctx.Name)),
-		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
+		Name: filepath.Join(scope, slug.Make(ctx.Name)),
 	})
 
 	tsconfig, _ := json.MarshalIndent(tsConfigBase, "", " ")
 	os.WriteFile(filepath.Join(sublime.Root, "tsconfig.base.json"), tsconfig, 0644)
 
-	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
-
-	os.RemoveAll(filepath.Join(libDirectory, ".git"))
+	color.Success.Println("❤️‍🔥 Tsconfig base updated!")
 }
 
 func (ctx *CreateCommand) YarnLink() {
@@ -222,11 +293,31 @@ func (ctx *CreateCommand) YarnLink() {
 	workspaceDir := core.GetSublime().Root
 
 	_, err := utils.YarnInstall(workspaceDir)
-
 	if err != nil {
-		color.Error.Println("Yarn wasn't installed on", workspaceDir, ". Please do it manually")
-		color.Error.Println("Yarn error:", err.Error())
+		ctx.ErrorOut(err, fmt.Sprintf("Yarn wasn't installed on: %s", workspaceDir))
 	}
 
-	color.Success.Println("✅ Your app is updated. Yarn performed link on packages.")
+	color.Success.Println("✅ Package created and ready to be used")
+}
+
+func (ctx *CreateCommand) CreateCloudPackage() {
+	color.Info.Println("❤️‍🔥 Creating package on cloud platform")
+	sublime := core.GetSublime()
+
+	supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
+	_, err := supabase.CreateWorkspacePackage(ctx.Name, ctx.Type, ctx.Description, ctx.WorkspaceID)
+	if err != nil {
+		ctx.ErrorOut(err, "Unable to create package on cloud. Try again.")
+	}
+
+	color.Success.Println("❤️‍🔥 Package created on cloud")
+}
+
+func (ctx *CreateCommand) ErrorOut(err error, msg string) {
+	if ctx.PackageDir != "" {
+		os.RemoveAll(ctx.PackageDir)
+	}
+
+	color.Error.Println(msg, err)
+	cobra.CheckErr(err)
 }

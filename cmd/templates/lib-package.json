@@ -32,7 +32,7 @@
       "sass": "^1.51.0",
       "ts-jest": "^26.1.1",
       "typescript": "^4.5.4",
-      "vite": "^2.8.0"
+      "vite": "^3.0.2"
     },
     "dependencies": {
       "lit": "^2.2.1"

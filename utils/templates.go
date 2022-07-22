@@ -43,6 +43,16 @@ type PackageJsonVars struct {
 	Type      string
 }
 
+type RcJsonVars struct {
+	Name     string
+	Username string
+	Email    string
+	Token    string
+	ID       string
+	Expire   int64
+	Refresh  string
+}
+
 type ViteJsonVars struct {
 	Namespace string
 	Scope     string
@@ -50,11 +60,19 @@ type ViteJsonVars struct {
 }
 
 type SublimeJsonVars struct {
-	Name      string
-	Scope     string
-	Repo      string
-	Namespace string
-	Root      string
+	Name         string
+	Repo         string
+	Namespace    string
+	Root         string
+	Organization string
+	ID           string
+	Description  string
+}
+
+type ReadmeVars struct {
+	Name         string
+	Repo         string
+	Organization string
 }
 
 type ReleaseYamlVars struct {

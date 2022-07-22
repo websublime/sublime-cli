@@ -21,21 +21,8 @@ THE SOFTWARE.
 */
 package utils
 
-import (
-	"os/exec"
-	"strings"
+var (
+	ApiUrl    string = "https://debvasmsyxrewpmqckdv.supabase.co"
+	ApiKey    string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ3OTM3NzUsImV4cCI6MTk3MDM2OTc3NX0.J2JZZ8IHInHwuGxNim4vpoLTx2ij344A1oOh1rIwbok"
+	ApiSecret string = ""
 )
-
-func YarnInstall(path string) (string, error) {
-	yarnCmd := exec.Command("yarn", "--cwd", path, "install")
-	output, err := yarnCmd.Output()
-
-	return strings.Replace(string(output), "\n", "", -1), err
-}
-
-func YarnBuild(path string) (string, error) {
-	yarnCmd := exec.Command("yarn", "--cwd", path, "build")
-	output, err := yarnCmd.Output()
-
-	return strings.Replace(string(output), "\n", "", -1), err
-}

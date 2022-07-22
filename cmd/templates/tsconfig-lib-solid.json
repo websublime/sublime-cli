@@ -28,8 +28,8 @@
       },
       "declarationDir": "./declarations",
       "removeComments": false,
-      "incremental": false,
-      "composite": false
+      "incremental": true,
+      "composite": true
     },
     "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "types/**/*.d.ts"],
     "extends": "../../tsconfig.base.json",
