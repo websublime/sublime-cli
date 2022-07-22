@@ -35,7 +35,7 @@
             "args": [
                 "workspace",
                 "--name", 
-                "sublime-ui", 
+                "sublime-ui2", 
                 "--organization",
                 "websublime", 
                 "--repo",

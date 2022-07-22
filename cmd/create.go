@@ -97,6 +97,16 @@ func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
 			sublime := core.GetSublime()
 
 			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
+
+			isUserOrganization, err := supabase.ValidateUserOrganization(sublime.Organization)
+			if err != nil {
+				cmdCreate.ErrorOut(err, "Invalid user")
+			}
+
+			if !isUserOrganization {
+				cmdCreate.ErrorOut(errors.New("Invalid organization user"), "User is not valid to this organization")
+			}
+
 			response, err := supabase.FindUserWorkspace(sublime.Name)
 			if err != nil {
 				cmdCreate.ErrorOut(err, "Workspace not found in this organization")

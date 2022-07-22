@@ -285,6 +285,66 @@ func (ctx *Supabase) GetUserOrganizations() (string, error) {
 	return string(body), err
 }
 
+func (ctx *Supabase) GetOrganizationByUser(userID string) (string, error) {
+	uri := fmt.Sprintf("%s/%s/organization_users?user_id=eq.%s&select=organization(id,name,created_at)", ctx.BaseURL, RestEndpoint, userID)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
+func (ctx *Supabase) GetWorkspaceByOrganization(orgID string) (string, error) {
+	uri := fmt.Sprintf("%s/%s/workspaces?organization_id=eq.%s&select=*", ctx.BaseURL, RestEndpoint, orgID)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if response.StatusCode >= 400 {
+		return "", errors.New(string(body))
+	}
+
+	return string(body), err
+}
+
 func (ctx *Supabase) FindUserWorkspace(workspace string) (string, error) {
 	uri := fmt.Sprintf("%s/%s/workspaces?name=eq.%s&select=*", ctx.BaseURL, RestEndpoint, workspace)
 
@@ -439,4 +499,58 @@ func (ctx *Supabase) UpdateWorkspacePackageVersion(name string, version string) 
 	}
 
 	return string(body), err
+}
+
+func (ctx *Supabase) ValidateUserOrganization(organization string) (bool, error) {
+	var isUserOrganization bool = false
+
+	sublime := core.GetSublime()
+
+	response, err := ctx.GetOrganizationByUser(sublime.Author.ID)
+	if err != nil {
+		return isUserOrganization, errors.New("User not found in this organization")
+	}
+
+	organizations := []map[string]core.Organization{}
+
+	err = json.Unmarshal([]byte(response), &organizations)
+	if err != nil {
+		return isUserOrganization, errors.New("Unable to parse organization")
+	}
+
+	for i := range organizations {
+		if organizations[i]["organization"].Name == organization {
+			isUserOrganization = true
+			sublime.ID = organizations[i]["organization"].ID
+			sublime.Organization = organizations[i]["organization"].Name
+			break
+		}
+	}
+
+	return isUserOrganization, nil
+}
+
+func (ctx *Supabase) ValidateWorkspaceOrganization(workspace string) (bool, error) {
+	var isWorkspaceOrganization bool = false
+
+	response, err := ctx.GetWorkspaceByOrganization(workspace)
+	if err != nil {
+		return isWorkspaceOrganization, errors.New("Workspace not found in this organization")
+	}
+
+	workspaces := []core.Workspace{}
+
+	err = json.Unmarshal([]byte(response), &workspaces)
+	if err != nil {
+		return isWorkspaceOrganization, errors.New("Unable to parse workspace")
+	}
+
+	for i := range workspaces {
+		if workspaces[i].Name == workspace {
+			isWorkspaceOrganization = true
+			break
+		}
+	}
+
+	return isWorkspaceOrganization, nil
 }

@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -77,32 +76,17 @@ func NewWorkspaceCmd(cmdWsp *WorkSpaceCommand) *cobra.Command {
 		Short: "Create a workspace project",
 		Long:  "Workspace command will create a monorepo directory with all configurations needeed to initiate. Also it will be created on the cloud platform",
 		PreRun: func(cmd *cobra.Command, _ []string) {
-			sublime := core.GetSublime()
-			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
-			response, err := supabase.GetUserOrganizations()
-			if err != nil {
-				cmdWsp.ErrorOut(err, "User not found in this organization")
-			}
-
-			orgs := []core.Organization{}
-
-			err = json.Unmarshal([]byte(response), &orgs)
-			if err != nil {
-				cmdWsp.ErrorOut(err, "Unable to parse organization")
-			}
-
 			organization, err := cmd.Flags().GetString("organization")
 			if err != nil {
 				cmdWsp.ErrorOut(err, "Organization parameter invalid")
 			}
 
-			var isUserOrganization bool = false
-			for i := range orgs {
-				if orgs[i].Name == organization {
-					isUserOrganization = true
-					sublime.ID = orgs[i].ID
-					break
-				}
+			sublime := core.GetSublime()
+			supabase := clients.NewSupabase(utils.ApiUrl, utils.ApiKey, sublime.Author.Token, "production")
+
+			isUserOrganization, err := supabase.ValidateUserOrganization(organization)
+			if err != nil {
+				cmdWsp.ErrorOut(err, "Invalid user")
 			}
 
 			if !isUserOrganization {
