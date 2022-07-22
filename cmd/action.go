@@ -189,6 +189,7 @@ func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
 			manifestDestination = fmt.Sprintf("%s/%s", pkgJson.Name, ctx.Environment)
 		} else {
 			manifestDestination = pkgJson.Name
+			supabase.UpdateWorkspacePackageVersion(pkgs[key].Name, pkgJson.Version)
 		}
 
 		supabase.Upload("manifests", manifestFile.Name(), manifestDestination)

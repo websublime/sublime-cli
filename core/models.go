@@ -96,6 +96,7 @@ type WorkspacePackage struct {
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 	Type        string `json:"type,omitempty"`
+	Version     string `json:"version,omitempty"`
 	WorkspaceID string `json:"workspace_id,omitempty"`
 	CreatedAt   string `json:"created_at,omitempty"`
 	CreatedBy   string `json:"created_by,omitempty"`
