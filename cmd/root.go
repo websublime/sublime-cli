@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/websublime/sublime-cli/core"
@@ -50,7 +51,7 @@ func NewRootCommand() *cobra.Command {
 
 func Execute() {
 	if err := rootCommand.Execute(); err != nil {
-		utils.ErrorOut(err, utils.MessageErrorCommandExecution, utils.ErrorCmdExecution)
+		utils.ErrorOut(utils.MessageErrorCommandExecution, utils.ErrorCmdExecution)
 	}
 }
 
@@ -58,6 +59,7 @@ func init() {
 	rootFlags := &RootFlags{}
 
 	cobra.OnInitialize(func() {
+		banner()
 		initializeCommand(rootFlags)
 	})
 
@@ -65,11 +67,25 @@ func init() {
 	rootCommand.PersistentFlags().StringVar(&rootFlags.Root, utils.CommandFlagRoot, "", utils.MessageCommandRootUsage)
 }
 
+func banner() {
+	banner := `
+	
+███████╗██╗   ██╗██████╗ ██╗     ██╗███╗   ███╗███████╗     ██████╗██╗     ██╗
+██╔════╝██║   ██║██╔══██╗██║     ██║████╗ ████║██╔════╝    ██╔════╝██║     ██║
+███████╗██║   ██║██████╔╝██║     ██║██╔████╔██║█████╗      ██║     ██║     ██║
+╚════██║██║   ██║██╔══██╗██║     ██║██║╚██╔╝██║██╔══╝      ██║     ██║     ██║
+███████║╚██████╔╝██████╔╝███████╗██║██║ ╚═╝ ██║███████╗    ╚██████╗███████╗██║
+╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝╚══════╝╚═╝
+                                                                              
+
+|-----------------------------------------------------------------------------|	
+`
+
+	color.Green.Println(banner)
+}
+
 func initializeCommand(rootFlags *RootFlags) {
 	config := core.GetConfig()
-
-	config.Tracker.Increment(5)
-	config.Tracker.UpdateMessage("Initialize configuration")
 
 	if rootFlags.Root != "" {
 		config.SetRootDir(rootFlags.Root)

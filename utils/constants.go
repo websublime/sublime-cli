@@ -36,16 +36,34 @@ const (
 	ErrorReadFile         ErrorType = "EREAD_FILE"
 	ErrorCmdExecution     ErrorType = "ECMD_EXECUTION"
 	ErrorMissingDirectory ErrorType = "EMISSING_DIRECTORY"
+	ErrorPromptInvalid    ErrorType = "EPROMPT_INVALID"
 
 	CommandRoot       string = "sublime"
 	CommandFlagRoot   string = "root"
 	CommandFlagConfig string = "config"
 
-	MessageCommandConfigUsage string = "Config file (default is .sublime.json)"
-	MessageCommandRootUsage   string = "Project working dir, default to current dir"
-	MessageCommandRootShort   string = "CLI tool to manage monorepo packages"
+	CommandRegister string = "register"
+
+	MessageCommandConfigUsage   string = "Config file (default is .sublime.json)."
+	MessageCommandRootUsage     string = "Project working dir, default to current dir."
+	MessageCommandRootShort     string = "CLI tool to manage monorepo packages."
+	MessageCommandRegisterShort string = "Register author on sublime cloud platform."
+	MessageCommandRegisterLong  string = `
+	As an author you will register in websublime.dev platform to be able
+	to create an organization like in github and sync all your packages you create
+	in a monorepo style. This packages are intended to be JS UI/Libs whatever and
+	they will be available as single scripts or npm packages.
+	`
+	MessageCommandRegisterNamePrompt          string = "Please provide your name:"
+	MessageErrorCommandRegisterNamePrompt     string = "Name provided is not valid."
+	MessageCommandRegisterUsernamePrompt      string = "Please provide your github username:"
+	MessageErrorCommandRegisterUsernamePrompt string = "Username provided is not valid."
+	MessageCommandRegisterEmailPrompt         string = "Please provide your email:"
+	MessageErrorCommandRegisterEmailPrompt    string = "Email provided is not valid."
+	MessageCommandRegisterPasswordPrompt      string = "Please provide a password:"
+	MessageErrorCommandRegisterPasswordPrompt string = "Password provided is not valid."
 
 	MessageErrorCommandExecution string = "Unable to execute command."
-	MessageErrorCurrentDirectory string = "Unable to get current directory"
-	MessageErrorHomeDirectory    string = "Unable to get user home directory"
+	MessageErrorCurrentDirectory string = "Unable to get current directory."
+	MessageErrorHomeDirectory    string = "Unable to get user home directory."
 )

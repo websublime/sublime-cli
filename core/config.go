@@ -35,31 +35,30 @@ var config = NewConfig()
 type Config struct {
 	RootDir  string            `json:"root,omitempty"`
 	HomeDir  string            `json:"home,omitempty"`
-	Progress *progress.Writer  `json:"-"`
+	Progress progress.Writer   `json:"-"`
 	Tracker  *progress.Tracker `json:"-"`
 }
 
 func NewConfig() *Config {
 	dir, err := os.Getwd()
 	if err != nil {
-		utils.ErrorOut(err, utils.MessageErrorCurrentDirectory, utils.ErrorMissingDirectory)
+		utils.ErrorOut(utils.MessageErrorCurrentDirectory, utils.ErrorMissingDirectory)
 	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		utils.ErrorOut(err, utils.MessageErrorHomeDirectory, utils.ErrorMissingDirectory)
+		utils.ErrorOut(utils.MessageErrorHomeDirectory, utils.ErrorMissingDirectory)
 	}
 
 	pg := progress.NewWriter()
 	pg.SetAutoStop(false)
-	pg.SetTrackerLength(250)
-	pg.SetMessageWidth(250)
+	pg.SetTrackerLength(25)
+	pg.SetMessageWidth(50)
 	pg.SetNumTrackersExpected(1)
 	pg.SetTrackerPosition(progress.PositionRight)
 	pg.SetStyle(progress.StyleBlocks)
 	pg.SetUpdateFrequency(time.Microsecond)
-
-	go pg.Render()
+	pg.Style().Colors = progress.StyleColorsExample
 
 	units := &progress.UnitsDefault
 	tracker := progress.Tracker{
@@ -73,7 +72,7 @@ func NewConfig() *Config {
 	return &Config{
 		RootDir:  dir,
 		HomeDir:  homeDir,
-		Progress: &pg,
+		Progress: pg,
 		Tracker:  &tracker,
 	}
 }
@@ -85,7 +84,7 @@ func GetConfig() *Config {
 func (ctx *Config) SetRootDir(path string) {
 	dir, err := os.Getwd()
 	if err != nil {
-		utils.ErrorOut(err, utils.MessageErrorCurrentDirectory, utils.ErrorMissingDirectory)
+		utils.ErrorOut(utils.MessageErrorCurrentDirectory, utils.ErrorMissingDirectory)
 	}
 
 	if filepath.IsAbs(path) {

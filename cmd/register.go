@@ -23,9 +23,13 @@ package cmd
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/websublime/sublime-cli/api"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/models"
+	"github.com/websublime/sublime-cli/utils"
 )
 
 type RegisterFlags struct {
@@ -37,29 +41,22 @@ type RegisterFlags struct {
 }
 
 func init() {
+	//config := core.GetConfig()
+
+	//
+
 	registerFlags := &RegisterFlags{}
 	registerCmd := NewRegisterCommand(registerFlags)
 
 	rootCommand.AddCommand(registerCmd)
 
-	registerCmd.Flags().StringVar(&registerFlags.Name, "name", "", "Workspace folder name [REQUIRED]")
-	registerCmd.MarkFlagRequired("name")
-
-	registerCmd.Flags().StringVar(&registerFlags.Username, "username", "", "Git username [REQUIRED]")
-	registerCmd.MarkFlagRequired("username")
-
-	registerCmd.Flags().StringVar(&registerFlags.Email, "email", "", "Git email [REQUIRED]")
-	registerCmd.MarkFlagRequired("email")
-
-	registerCmd.Flags().StringVar(&registerFlags.Password, "password", "", "User password [REQUIRED]")
-	registerCmd.MarkFlagRequired("password")
 }
 
 func NewRegisterCommand(cmdReg *RegisterFlags) *cobra.Command {
 	return &cobra.Command{
-		Use:   "register",
-		Short: "Register author on cloud platform",
-		Long:  "Register command will register you as author on cloud platform and also create you local rc file to use on future workspaces and commands",
+		Use:   utils.CommandRegister,
+		Short: utils.MessageCommandRegisterShort,
+		Long:  utils.MessageCommandRegisterLong,
 		Run: func(cmd *cobra.Command, _ []string) {
 			cmdReg.Run(cmd)
 		},
@@ -68,9 +65,64 @@ func NewRegisterCommand(cmdReg *RegisterFlags) *cobra.Command {
 
 func (ctx *RegisterFlags) Run(cmd *cobra.Command) {
 	config := core.GetConfig()
+
+	nameContent := models.PromptContent{
+		Error: utils.MessageErrorCommandRegisterNamePrompt,
+		Label: utils.MessageCommandRegisterNamePrompt,
+		Hide:  false,
+	}
+
+	userContent := models.PromptContent{
+		Error: utils.MessageErrorCommandRegisterUsernamePrompt,
+		Label: utils.MessageCommandRegisterUsernamePrompt,
+		Hide:  false,
+	}
+
+	emailContent := models.PromptContent{
+		Error: utils.MessageErrorCommandRegisterEmailPrompt,
+		Label: utils.MessageCommandRegisterEmailPrompt,
+		Hide:  false,
+	}
+
+	passwordContent := models.PromptContent{
+		Error: utils.MessageErrorCommandRegisterPasswordPrompt,
+		Label: utils.MessageCommandRegisterPasswordPrompt,
+		Mask:  '*',
+	}
+
+	name, err := models.PromptGetInput(nameContent, 5)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+	username, err := models.PromptGetInput(userContent, 5)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+	email, err := models.PromptGetInput(emailContent, 5)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+	password, err := models.PromptGetInput(passwordContent, 8)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+
+	go config.Progress.Render()
+
+	time.Sleep(time.Millisecond)
 	config.Tracker.UpdateMessage("Start registration process")
 	config.Tracker.Increment(10)
 
+	supabase := api.NewSupabase("", "", "", "")
+	supabase.RegisterAuthor(name, username, email, password)
+
+	time.Sleep(time.Millisecond)
+	config.Tracker.UpdateMessage("Author registered in platform. Init local config")
+	config.Tracker.Increment(10)
+
 	ctx.HomeDir = filepath.Join(config.HomeDir, ".sublime")
+	config.Tracker.Increment(10)
+
+	time.Sleep(time.Millisecond)
 	config.Tracker.MarkAsDone()
 }

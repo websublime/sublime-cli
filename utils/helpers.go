@@ -22,6 +22,7 @@ THE SOFTWARE.
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -243,8 +244,7 @@ func Contains(args []string, lookup string) bool {
 }
 
 // Prints error and exit application
-func ErrorOut(err error, message string, code ErrorType) {
-	color.Error.Println(" 🚨  ", fmt.Sprintf("TYPE: %s", code))
-	color.Error.Println(message)
-	cobra.CheckErr(err)
+func ErrorOut(message string, code ErrorType) {
+	color.Red.Println(message)
+	cobra.CheckErr(errors.New(fmt.Sprintf(" 🚨 TYPE: %s", code)))
 }
