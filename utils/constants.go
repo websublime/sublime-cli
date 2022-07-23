@@ -37,6 +37,7 @@ const (
 	ErrorCmdExecution     ErrorType = "ECMD_EXECUTION"
 	ErrorMissingDirectory ErrorType = "EMISSING_DIRECTORY"
 	ErrorPromptInvalid    ErrorType = "EPROMPT_INVALID"
+	ErrorInvalidAuthor    ErrorType = "EAUTHOR_INVALID"
 
 	CommandRoot       string = "sublime"
 	CommandFlagRoot   string = "root"
@@ -44,9 +45,10 @@ const (
 
 	CommandRegister string = "register"
 
-	MessageCommandConfigUsage   string = "Config file (default is .sublime.json)."
-	MessageCommandRootUsage     string = "Project working dir, default to current dir."
-	MessageCommandRootShort     string = "CLI tool to manage monorepo packages."
+	MessageCommandConfigUsage string = "Config file (default is .sublime.json)."
+	MessageCommandRootUsage   string = "Project working dir, default to current dir."
+	MessageCommandRootShort   string = "CLI tool to manage monorepo packages."
+
 	MessageCommandRegisterShort string = "Register author on sublime cloud platform."
 	MessageCommandRegisterLong  string = `
 	As an author you will register in websublime.dev platform to be able
@@ -54,16 +56,20 @@ const (
 	in a monorepo style. This packages are intended to be JS UI/Libs whatever and
 	they will be available as single scripts or npm packages.
 	`
-	MessageCommandRegisterNamePrompt          string = "Please provide your name:"
-	MessageErrorCommandRegisterNamePrompt     string = "Name provided is not valid."
-	MessageCommandRegisterUsernamePrompt      string = "Please provide your github username:"
-	MessageErrorCommandRegisterUsernamePrompt string = "Username provided is not valid."
-	MessageCommandRegisterEmailPrompt         string = "Please provide your email:"
-	MessageErrorCommandRegisterEmailPrompt    string = "Email provided is not valid."
-	MessageCommandRegisterPasswordPrompt      string = "Please provide a password:"
-	MessageErrorCommandRegisterPasswordPrompt string = "Password provided is not valid."
+	MessageCommandRegisterNamePrompt     string = "Please provide your name:"
+	MessageCommandRegisterUsernamePrompt string = "Please provide your github username:"
+	MessageCommandRegisterEmailPrompt    string = "Please provide your email:"
+	MessageCommandRegisterPasswordPrompt string = "Please provide a password:"
+	MessageCommandRegisterProgressInit   string = "Start registration process."
+	MessageCommandRegisterProgressAuthor string = "Author registered. Init local config."
+	MessageCommandRegisterProgressDone   string = "Almost done!"
 
 	MessageErrorCommandExecution string = "Unable to execute command."
 	MessageErrorCurrentDirectory string = "Unable to get current directory."
 	MessageErrorHomeDirectory    string = "Unable to get user home directory."
+
+	MessageErrorCommandRegisterNamePrompt     string = "Name provided is not valid."
+	MessageErrorCommandRegisterUsernamePrompt string = "Username provided is not valid."
+	MessageErrorCommandRegisterEmailPrompt    string = "Email provided is not valid."
+	MessageErrorCommandRegisterPasswordPrompt string = "Password provided is not valid."
 )

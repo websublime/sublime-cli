@@ -19,52 +19,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package api
+package utils
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-
-	"github.com/websublime/sublime-cli/models"
+//https://github.com/supabase/supabase/discussions/2337
+var (
+	ApiUrl    string = "https://debvasmsyxrewpmqckdv.supabase.co"
+	ApiKey    string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ3OTM3NzUsImV4cCI6MTk3MDM2OTc3NX0.J2JZZ8IHInHwuGxNim4vpoLTx2ij344A1oOh1rIwbok"
+	ApiSecret string = ""
 )
-
-func (ctx *Supabase) RegisterAuthor(name string, username string, email string, password string) (string, error) {
-	signup := models.NewSignUp(email, password, name, username)
-
-	payload, err := json.Marshal(signup)
-	if err != nil {
-		return "", err
-	}
-
-	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
-
-	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
-	req.Header.Add("apikey", ctx.ApiKey)
-
-	response, err := ctx.HTTPClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if response.StatusCode >= 400 {
-		return "", errors.New(string(body))
-	}
-
-	return string(body), err
-}

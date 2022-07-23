@@ -22,6 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -80,8 +82,8 @@ func banner() {
 
 |-----------------------------------------------------------------------------|	
 `
-
 	color.Green.Println(banner)
+	color.Blue.Println(fmt.Sprintf("Version: %s", Version))
 }
 
 func initializeCommand(rootFlags *RootFlags) {

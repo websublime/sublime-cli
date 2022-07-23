@@ -22,8 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/websublime/sublime-cli/api"
@@ -41,15 +41,10 @@ type RegisterFlags struct {
 }
 
 func init() {
-	//config := core.GetConfig()
-
-	//
-
 	registerFlags := &RegisterFlags{}
 	registerCmd := NewRegisterCommand(registerFlags)
 
 	rootCommand.AddCommand(registerCmd)
-
 }
 
 func NewRegisterCommand(cmdReg *RegisterFlags) *cobra.Command {
@@ -59,13 +54,12 @@ func NewRegisterCommand(cmdReg *RegisterFlags) *cobra.Command {
 		Long:  utils.MessageCommandRegisterLong,
 		Run: func(cmd *cobra.Command, _ []string) {
 			cmdReg.Run(cmd)
+			cmdReg.RegisterAuthor()
 		},
 	}
 }
 
 func (ctx *RegisterFlags) Run(cmd *cobra.Command) {
-	config := core.GetConfig()
-
 	nameContent := models.PromptContent{
 		Error: utils.MessageErrorCommandRegisterNamePrompt,
 		Label: utils.MessageCommandRegisterNamePrompt,
@@ -107,22 +101,29 @@ func (ctx *RegisterFlags) Run(cmd *cobra.Command) {
 		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
 	}
 
+	ctx.Email = email
+	ctx.Name = name
+	ctx.Password = password
+	ctx.Username = username
+}
+
+func (ctx *RegisterFlags) RegisterAuthor() {
+	config := core.GetConfig()
+
 	go config.Progress.Render()
 
-	time.Sleep(time.Millisecond)
-	config.Tracker.UpdateMessage("Start registration process")
-	config.Tracker.Increment(10)
+	config.UpdateProgress(utils.MessageCommandRegisterProgressInit, 2)
 
-	supabase := api.NewSupabase("", "", "", "")
-	supabase.RegisterAuthor(name, username, email, password)
+	supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
+	_, err := supabase.RegisterAuthor(ctx.Name, ctx.Username, ctx.Email, ctx.Password)
+	if err != nil {
+		config.TerminateErrorProgress(fmt.Sprintf("Error: %s", utils.ErrorInvalidAuthor))
+		utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
+	}
 
-	time.Sleep(time.Millisecond)
-	config.Tracker.UpdateMessage("Author registered in platform. Init local config")
-	config.Tracker.Increment(10)
-
+	config.UpdateProgress(utils.MessageCommandRegisterProgressAuthor, 2)
 	ctx.HomeDir = filepath.Join(config.HomeDir, ".sublime")
-	config.Tracker.Increment(10)
 
-	time.Sleep(time.Millisecond)
-	config.Tracker.MarkAsDone()
+	config.UpdateProgress(utils.MessageCommandRegisterProgressDone, 2)
+	config.TerminateProgress()
 }

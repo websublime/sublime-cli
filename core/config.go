@@ -93,3 +93,23 @@ func (ctx *Config) SetRootDir(path string) {
 		ctx.RootDir = filepath.Join(dir, path)
 	}
 }
+
+func (ctx *Config) UpdateProgress(message string, increment int64) {
+	ctx.Tracker.UpdateMessage(message)
+
+	for idx := int64(1); idx < increment; idx++ {
+		ctx.Tracker.Increment(idx * 10)
+		time.Sleep(time.Second)
+	}
+}
+
+func (ctx *Config) TerminateProgress() {
+	ctx.Tracker.MarkAsDone()
+	time.Sleep(time.Second)
+}
+
+func (ctx *Config) TerminateErrorProgress(message string) {
+	ctx.Tracker.UpdateMessage(message)
+	ctx.Tracker.MarkAsErrored()
+	time.Sleep(time.Second)
+}
