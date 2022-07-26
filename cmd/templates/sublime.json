@@ -1,0 +1,10 @@
+{
+  "name": "{{ .Name }}",
+  "repo": "{{ .Repo }}",
+  "namespace": "{{ .Namespace }}",
+  "root": "{{ .Root }}",
+  "organization": "{{ .Organization }}",
+  "id": "{{ .ID }}",
+  "description": "{{ .Description }}",
+  "packages": []
+}

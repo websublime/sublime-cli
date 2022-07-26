@@ -22,8 +22,10 @@ THE SOFTWARE.
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
@@ -247,4 +249,23 @@ func Contains(args []string, lookup string) bool {
 func ErrorOut(message string, code ErrorType) {
 	color.Red.Println(message)
 	cobra.CheckErr(errors.New(fmt.Sprintf(" 🚨 TYPE: %s", code)))
+}
+
+func process(t *template.Template, vars interface{}) string {
+	var tmplBytes bytes.Buffer
+
+	err := t.Execute(&tmplBytes, vars)
+	if err != nil {
+		panic(err)
+	}
+	return tmplBytes.String()
+}
+
+func ProcessString(str string, vars interface{}, delimLeft string, delimRight string) string {
+	tmpl, err := template.New("tmpl").Delims(delimLeft, delimRight).Parse(str)
+
+	if err != nil {
+		panic(err)
+	}
+	return process(tmpl, vars)
 }

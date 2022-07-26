@@ -1,0 +1,39 @@
+name: Build and Deploy Production artifacts
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  CI: true
+  NODE_ENV: "develop"
+
+jobs:
+  artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build
+        run: yarn build
+
+      - name: Artifacts
+        env:
+          NODE_ENV: "production"
+        run: |
+          wget https://github.com/websublime/sublime-cli/releases/download/[[ .Version ]]/sublime-[[ .Version ]]-linux-amd64.tar.gz
+          tar -xf sublime-[[ .Version ]]-linux-amd64.tar.gz sublime
+          chmod +x sublime
+          ./sublime action --kind tag --env "$NODE_ENV"

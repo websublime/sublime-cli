@@ -32,19 +32,20 @@ import (
 	"github.com/websublime/sublime-cli/models"
 )
 
-func (ctx *Supabase) RegisterAuthor(name string, username string, email string, password string) (string, error) {
+func (ctx *Supabase) RegisterAuthor(name string, username string, email string, password string) (models.SignResponse, error) {
 	signup := models.NewSignUp(email, password, name, username)
+	model := models.SignResponse{}
 
 	payload, err := json.Marshal(signup)
 	if err != nil {
-		return "", err
+		return model, err
 	}
 
 	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
 
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
 	if err != nil {
-		return "", err
+		return model, err
 	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
@@ -52,19 +53,24 @@ func (ctx *Supabase) RegisterAuthor(name string, username string, email string, 
 
 	response, err := ctx.HTTPClient.Do(req)
 	if err != nil {
-		return "", err
+		return model, err
 	}
 
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", err
+		return model, err
 	}
 
 	if response.StatusCode >= 400 {
-		return "", errors.New(string(body))
+		return model, errors.New(string(body))
 	}
 
-	return string(body), err
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		return model, err
+	}
+
+	return model, nil
 }

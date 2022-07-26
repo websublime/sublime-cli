@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -84,15 +85,15 @@ func (ctx *RegisterFlags) Run(cmd *cobra.Command) {
 		Mask:  '*',
 	}
 
-	name, err := models.PromptGetInput(nameContent, 5)
+	name, err := models.PromptGetInput(nameContent, 3)
 	if err != nil {
 		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
 	}
-	username, err := models.PromptGetInput(userContent, 5)
+	username, err := models.PromptGetInput(userContent, 3)
 	if err != nil {
 		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
 	}
-	email, err := models.PromptGetInput(emailContent, 5)
+	email, err := models.PromptGetInput(emailContent, 3)
 	if err != nil {
 		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
 	}
@@ -115,15 +116,51 @@ func (ctx *RegisterFlags) RegisterAuthor() {
 	config.UpdateProgress(utils.MessageCommandRegisterProgressInit, 2)
 
 	supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
-	_, err := supabase.RegisterAuthor(ctx.Name, ctx.Username, ctx.Email, ctx.Password)
+	author, err := supabase.RegisterAuthor(ctx.Name, ctx.Username, ctx.Email, ctx.Password)
 	if err != nil {
-		config.TerminateErrorProgress(fmt.Sprintf("Error: %s", utils.ErrorInvalidAuthor))
-		utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidAuthor)
 	}
 
 	config.UpdateProgress(utils.MessageCommandRegisterProgressAuthor, 2)
 	ctx.HomeDir = filepath.Join(config.HomeDir, ".sublime")
+	if err := os.Mkdir(ctx.HomeDir, 0755); err != nil {
+		ctx.CommandError(utils.MessageErrorCommandRegisterHomeDir, utils.ErrorCreateDirectory)
+	}
+
+	config.UpdateProgress(utils.MessageCommandRegisterProgressAuthor, 2)
+	rcJson, err := FileTemplates.ReadFile("templates/rc-template.json")
+	if err != nil {
+		ctx.CommandError(utils.MessageErrorCommandRegisterReadTemplate, utils.ErrorInvalidTemplate)
+	}
+
+	config.UpdateProgress(utils.MessageCommandRegisterProgressAuthor, 2)
+	rcFile, err := os.Create(filepath.Join(ctx.HomeDir, "rc.json"))
+	if err != nil {
+		ctx.CommandError(utils.MessageErrorCommandRegisterReadTemplate, utils.ErrorInvalidTemplate)
+	}
 
 	config.UpdateProgress(utils.MessageCommandRegisterProgressDone, 2)
+	_, err = rcFile.WriteString(utils.ProcessString(string(rcJson), &models.AuthorFileProps{
+		Name:     author.UserMetadata.Name,
+		Username: author.UserMetadata.Author,
+		Email:    author.Email,
+		Token:    "",
+		ID:       author.ID,
+	}, "{{", "}}"))
+	if err != nil {
+		ctx.CommandError(utils.MessageErrorCommandRegisterWriteTemplate, utils.ErrorInvalidTemplate)
+	}
+
 	config.TerminateProgress()
+}
+
+func (ctx *RegisterFlags) CommandError(message string, errorType utils.ErrorType) {
+	config := core.GetConfig()
+
+	if ctx.HomeDir != "" {
+		os.RemoveAll(ctx.HomeDir)
+	}
+
+	config.TerminateErrorProgress(fmt.Sprintf("Error: %s", errorType))
+	utils.ErrorOut(message, errorType)
 }

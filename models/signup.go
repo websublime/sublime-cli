@@ -32,6 +32,33 @@ type Sign struct {
 	Data     SignData `json:"data"`
 }
 
+type SignResponse struct {
+	ID             string `json:"id"`
+	Aud            string `json:"aud"`
+	Role           string `json:"role"`
+	Email          string `json:"email"`
+	Phone          string `json:"phone"`
+	ConfirmationAt string `json:"confirmation_sent_at"`
+	AppMetadata    struct {
+		Provider  string   `json:"provider"`
+		Providers []string `json:"providers"`
+	} `json:"app_metadata"`
+	UserMetadata struct {
+		Author string `json:"author"`
+		Name   string `json:"name"`
+	} `json:"user_metadata"`
+	Identities []struct {
+		ID           string `json:"id"`
+		UserID       string `json:"user_id"`
+		IdentityData struct {
+			Sub string `json:"sub"`
+		} `json:"identity_data"`
+		Provider   string `json:"provider"`
+		LastSignAt string `json:"last_sign_in_at"`
+		CreatedAt  string `json:"created_at"`
+	} `json:"identities"`
+}
+
 func NewSignUp(email string, password string, name string, username string) *Sign {
 	return &Sign{
 		Email:    email,

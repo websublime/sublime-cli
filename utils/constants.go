@@ -36,8 +36,10 @@ const (
 	ErrorReadFile         ErrorType = "EREAD_FILE"
 	ErrorCmdExecution     ErrorType = "ECMD_EXECUTION"
 	ErrorMissingDirectory ErrorType = "EMISSING_DIRECTORY"
+	ErrorCreateDirectory  ErrorType = "ECREATE_DIRECTORY"
 	ErrorPromptInvalid    ErrorType = "EPROMPT_INVALID"
 	ErrorInvalidAuthor    ErrorType = "EAUTHOR_INVALID"
+	ErrorInvalidTemplate  ErrorType = "ETEMPLATE_INVALID"
 
 	CommandRoot       string = "sublime"
 	CommandFlagRoot   string = "root"
@@ -72,4 +74,7 @@ const (
 	MessageErrorCommandRegisterUsernamePrompt string = "Username provided is not valid."
 	MessageErrorCommandRegisterEmailPrompt    string = "Email provided is not valid."
 	MessageErrorCommandRegisterPasswordPrompt string = "Password provided is not valid."
+	MessageErrorCommandRegisterHomeDir        string = "Error creating data author directory."
+	MessageErrorCommandRegisterReadTemplate   string = "Unable to read template file."
+	MessageErrorCommandRegisterWriteTemplate  string = "Unable to write template file."
 )

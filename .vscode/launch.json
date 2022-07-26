@@ -71,15 +71,7 @@
                 "SUBLIME_API_KEY": ""
             },
             "args": [
-                "register",
-                "--name", 
-                "Miguel Ramos", 
-                "--username", 
-                "miguelramos", 
-                "--email", 
-                "miguel@websublime.dev",
-                "--password",
-                "my_secret_password"
+                "register"
             ]
         },
         {

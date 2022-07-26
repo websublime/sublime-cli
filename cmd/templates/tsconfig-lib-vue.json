@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+      "allowSyntheticDefaultImports": true,
+      "useDefineForClassFields": false,
+      "declaration": true,
+      "experimentalDecorators": true,
+      "importHelpers": true,
+      "inlineSources": true,
+      "isolatedModules": true,
+      "lib": ["es2017", "dom", "dom.iterable"],
+      "module": "esNext",
+      "moduleResolution": "node",
+      "noImplicitReturns": true,
+      "noUnusedParameters": true,
+      "noUnusedLocals": true,
+      "noImplicitAny": false,
+      "rootDir": ".",
+      "skipLibCheck": true,
+      "strict": true,
+      "sourceMap": true,
+      "target": "es2017",
+      "baseUrl": ".",
+      "paths": {
+        "*": ["./types/*", "*"],
+        "{{ .Namespace }}/*": ["./src/*"]
+      },
+      "declarationDir": "./declarations",
+      "removeComments": false,
+      "incremental": true,
+      "composite": true
+    },
+    "include": ["src/**/*.ts", "src/**/*.d.ts", "types/**/*.d.ts", "src/**/*.tsx", "types/**/*.d.ts"],
+    "extends": "../../tsconfig.base.json",
+    "references": [
+      {
+        "path": "{{ .Vite }}"
+      }
+    ]
+  }
