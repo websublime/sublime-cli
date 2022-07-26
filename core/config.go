@@ -57,8 +57,9 @@ func NewConfig() *Config {
 	pg.SetNumTrackersExpected(1)
 	pg.SetTrackerPosition(progress.PositionRight)
 	pg.SetStyle(progress.StyleBlocks)
-	pg.SetUpdateFrequency(time.Microsecond)
+	pg.SetUpdateFrequency(time.Nanosecond)
 	pg.Style().Colors = progress.StyleColorsExample
+	pg.Style().Visibility.Time = false
 
 	units := &progress.UnitsDefault
 	tracker := progress.Tracker{
@@ -99,8 +100,9 @@ func (ctx *Config) UpdateProgress(message string, increment int64) {
 
 	for idx := int64(1); idx <= increment; idx++ {
 		ctx.Tracker.Increment(idx * 10)
-		time.Sleep(time.Microsecond * 100)
 	}
+
+	time.Sleep(time.Microsecond * 100)
 }
 
 func (ctx *Config) TerminateProgress() {

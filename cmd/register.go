@@ -133,7 +133,7 @@ func (ctx *RegisterFlags) RegisterAuthor() {
 		ctx.CommandError(utils.MessageErrorCommandRegisterReadTemplate, utils.ErrorInvalidTemplate)
 	}
 
-	config.UpdateProgress(utils.MessageCommandRegisterProgressAuthor, 2)
+	config.UpdateProgress(utils.MessageCommandRegisterLocalAuthor, 2)
 	rcFile, err := os.Create(filepath.Join(ctx.HomeDir, "rc.json"))
 	if err != nil {
 		ctx.CommandError(utils.MessageErrorCommandRegisterReadTemplate, utils.ErrorInvalidTemplate)

@@ -64,6 +64,7 @@ const (
 	MessageCommandRegisterPasswordPrompt string = "Please provide a password:"
 	MessageCommandRegisterProgressInit   string = "Start registration process."
 	MessageCommandRegisterProgressAuthor string = "Author registered. Init local config."
+	MessageCommandRegisterLocalAuthor    string = "Author local metadata saved."
 	MessageCommandRegisterProgressDone   string = "Almost done!"
 
 	MessageErrorCommandExecution string = "Unable to execute command."
