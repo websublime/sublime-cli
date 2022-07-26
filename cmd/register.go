@@ -152,6 +152,7 @@ func (ctx *RegisterFlags) RegisterAuthor() {
 	}
 
 	config.TerminateProgress()
+	utils.InfoOut(utils.MessageCommandRegisterNextStep)
 }
 
 func (ctx *RegisterFlags) CommandError(message string, errorType utils.ErrorType) {

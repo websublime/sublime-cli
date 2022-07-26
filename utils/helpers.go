@@ -248,7 +248,11 @@ func Contains(args []string, lookup string) bool {
 // Prints error and exit application
 func ErrorOut(message string, code ErrorType) {
 	color.Red.Println(message)
-	cobra.CheckErr(errors.New(fmt.Sprintf(" 🚨 TYPE: %s", code)))
+	cobra.CheckErr(errors.New(fmt.Sprintf("🚨 TYPE: %s", code)))
+}
+
+func InfoOut(message string) {
+	color.Blue.Println(fmt.Sprintf("🚦 %s", message))
 }
 
 func process(t *template.Template, vars interface{}) string {

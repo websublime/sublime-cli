@@ -34,6 +34,7 @@ const (
 	ErrorUnknown          ErrorType = "E_UNKNOWN"
 	ErrorOpenFile         ErrorType = "EOPEN_FILE"
 	ErrorReadFile         ErrorType = "EREAD_FILE"
+	ErrorMissingFile      ErrorType = "EMISSING_FILE"
 	ErrorCmdExecution     ErrorType = "ECMD_EXECUTION"
 	ErrorMissingDirectory ErrorType = "EMISSING_DIRECTORY"
 	ErrorCreateDirectory  ErrorType = "ECREATE_DIRECTORY"
@@ -46,11 +47,18 @@ const (
 	CommandFlagConfig string = "config"
 
 	CommandRegister string = "register"
+	CommandLogin    string = "login"
 
 	MessageCommandConfigUsage string = "Config file (default is .sublime.json)."
 	MessageCommandRootUsage   string = "Project working dir, default to current dir."
 	MessageCommandRootShort   string = "CLI tool to manage monorepo packages."
 
+	MessageErrorAuthorFileMissing string = "Author file not found. Please register first then login to cloud service."
+	MessageErrorParseFile         string = "Unable to parse file."
+	MessageErrorIndentFile        string = "Unable to indent file."
+	MessageErrorWriteFile         string = "Unable to write file"
+
+	// Register command
 	MessageCommandRegisterShort string = "Register author on sublime cloud platform."
 	MessageCommandRegisterLong  string = `
 	As an author you will register in websublime.dev platform to be able
@@ -66,6 +74,7 @@ const (
 	MessageCommandRegisterProgressAuthor string = "Author registered. Init local config."
 	MessageCommandRegisterLocalAuthor    string = "Author local metadata saved."
 	MessageCommandRegisterProgressDone   string = "Almost done!"
+	MessageCommandRegisterNextStep       string = "Please check your email and confirm your registration. After confirmed please visit our platform and create your organization to be able to create packages."
 
 	MessageErrorCommandExecution string = "Unable to execute command."
 	MessageErrorCurrentDirectory string = "Unable to get current directory."
@@ -78,4 +87,20 @@ const (
 	MessageErrorCommandRegisterHomeDir        string = "Error creating data author directory."
 	MessageErrorCommandRegisterReadTemplate   string = "Unable to read template file."
 	MessageErrorCommandRegisterWriteTemplate  string = "Unable to write template file."
+
+	// Login command
+	MessageCommandLoginShort string = "Login author on sublime cloud platform."
+	MessageCommandLoginLong  string = `
+	As an author you will login in websublime.dev platform to be able
+	to create an packages and released them to the platform.
+	`
+
+	MessageCommandLoginEmailPrompt    string = "Login with your email:"
+	MessageCommandLoginPasswordPrompt string = "Login with your password:"
+	MessageCommandLoginProgressInit   string = "Attempt to log you in on the cloud platform"
+	MessageCommandLoginAuthor         string = "Author loggedin. Init update author data."
+	MessageCommandLoginSuccess        string = "Author data update and loggedin."
+
+	MessageErrorCommandLoginEmailPrompt    string = "Email is not valid."
+	MessageErrorCommandLoginPasswordPrompt string = "Password is not valid."
 )

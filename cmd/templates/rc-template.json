@@ -5,5 +5,5 @@
     "token": "{{ .Token }}",
     "id": "{{ .ID }}",
     "expires": "{{ .Expire }}",
-    "refresh_token": "{{ .Refresh }}"
+    "refresh": "{{ .Refresh }}"
 }
