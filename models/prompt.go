@@ -35,6 +35,11 @@ type PromptContent struct {
 	Mask    rune   `json:"mask,omitempty"`
 }
 
+type PromptSelectContent struct {
+	Label string   `json:"label"`
+	Items []string `json:"items"`
+}
+
 func PromptGetInput(content PromptContent, length int) (string, error) {
 	validate := func(input string) error {
 		if len(input) <= length {
@@ -60,4 +65,21 @@ func PromptGetInput(content PromptContent, length int) (string, error) {
 	}
 
 	return prompt.Run()
+}
+
+func PromptGetSelect(content PromptSelectContent) (int, string, error) {
+	index := -1
+	var result string
+	var err error
+
+	for index < 0 {
+		prompt := promptui.SelectWithAdd{
+			Label: content.Label,
+			Items: content.Items,
+		}
+
+		index, result, err = prompt.Run()
+	}
+
+	return index, result, err
 }
