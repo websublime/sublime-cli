@@ -34,7 +34,9 @@ import (
 var app = NewApp()
 
 type App struct {
-	Author *models.AuthorFileProps `json:"author"`
+	Author         *models.AuthorFileProps `json:"author"`
+	Organization   string                  `json:"organization"`
+	OrganizationID string                  `json:"Organization_id"`
 }
 
 func NewApp() *App {
@@ -73,7 +75,7 @@ func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 		return errors.New(utils.MessageErrorAuthorFileMissing)
 	}
 
-	authorMetadata := &models.AuthorFileProps{}
+	authorMetadata := models.AuthorFileProps{}
 
 	err = json.Unmarshal(rcJson, &authorMetadata)
 	if err != nil {
@@ -90,6 +92,36 @@ func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 	}
 
 	err = os.WriteFile(filepath.Join(config.HomeDir, ".sublime/rc.json"), data, 0644)
+	if err != nil {
+		return errors.New(utils.MessageErrorWriteFile)
+	}
+
+	return nil
+}
+
+func (ctx *App) UpdateWorkspace(workspace *models.Workspace) error {
+	config := GetConfig()
+	sublimeFile := filepath.Join(config.RootDir, workspace.Name, ".sublime.json")
+	sublimeJson, err := os.ReadFile(sublimeFile)
+	if err != nil {
+		return errors.New(utils.MessageErrorAuthorFileMissing)
+	}
+
+	sublimeMetadata := models.SublimeJsonFileProps{}
+
+	err = json.Unmarshal(sublimeJson, &sublimeMetadata)
+	if err != nil {
+		return errors.New(utils.MessageErrorParseFile)
+	}
+
+	sublimeMetadata.ID = workspace.ID
+
+	data, err := json.MarshalIndent(sublimeMetadata, "", " ")
+	if err != nil {
+		return errors.New(utils.MessageErrorIndentFile)
+	}
+
+	err = os.WriteFile(sublimeFile, data, 0644)
 	if err != nil {
 		return errors.New(utils.MessageErrorWriteFile)
 	}

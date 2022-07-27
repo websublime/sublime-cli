@@ -110,6 +110,23 @@ func (ctx *Config) TerminateProgress() {
 	ctx.Progress.Stop()
 }
 
+func (ctx *Config) DoneProgress() {
+	ctx.Tracker.MarkAsDone()
+}
+
+func (ctx *Config) AddTracker() {
+	units := &progress.UnitsDefault
+	tracker := progress.Tracker{
+		Total:   100,
+		Message: "",
+		Units:   *units,
+	}
+
+	ctx.Progress.AppendTracker(&tracker)
+
+	ctx.Tracker = &tracker
+}
+
 func (ctx *Config) TerminateErrorProgress(message string) {
 	ctx.Tracker.UpdateMessage(message)
 	ctx.Tracker.MarkAsErrored()

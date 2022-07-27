@@ -255,6 +255,10 @@ func InfoOut(message string) {
 	color.Blue.Println(fmt.Sprintf("🚦 %s", message))
 }
 
+func SuccessOut(message string) {
+	color.Green.Println(fmt.Sprintf("⭐️ %s", message))
+}
+
 func process(t *template.Template, vars interface{}) string {
 	var tmplBytes bytes.Buffer
 

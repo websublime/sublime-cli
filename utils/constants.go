@@ -40,21 +40,30 @@ const (
 )
 
 const (
-	ErrorUnknown          ErrorType = "E_UNKNOWN"
-	ErrorOpenFile         ErrorType = "EOPEN_FILE"
-	ErrorReadFile         ErrorType = "EREAD_FILE"
-	ErrorMissingFile      ErrorType = "EMISSING_FILE"
-	ErrorCmdExecution     ErrorType = "ECMD_EXECUTION"
-	ErrorMissingDirectory ErrorType = "EMISSING_DIRECTORY"
-	ErrorCreateDirectory  ErrorType = "ECREATE_DIRECTORY"
-	ErrorPromptInvalid    ErrorType = "EPROMPT_INVALID"
-	ErrorInvalidAuthor    ErrorType = "EAUTHOR_INVALID"
-	ErrorInvalidTemplate  ErrorType = "ETEMPLATE_INVALID"
-	ErrorInvalidToken     ErrorType = "ETOKEN_INVALID"
+	ErrorUnknown               ErrorType = "E_UNKNOWN"
+	ErrorOpenFile              ErrorType = "EOPEN_FILE"
+	ErrorReadFile              ErrorType = "EREAD_FILE"
+	ErrorMissingFile           ErrorType = "EMISSING_FILE"
+	ErrorCmdExecution          ErrorType = "ECMD_EXECUTION"
+	ErrorMissingDirectory      ErrorType = "EMISSING_DIRECTORY"
+	ErrorCreateDirectory       ErrorType = "ECREATE_DIRECTORY"
+	ErrorCreateFile            ErrorType = "ECREATE_FILE"
+	ErrorPromptInvalid         ErrorType = "EPROMPT_INVALID"
+	ErrorInvalidAuthor         ErrorType = "EAUTHOR_INVALID"
+	ErrorInvalidTemplate       ErrorType = "ETEMPLATE_INVALID"
+	ErrorInvalidToken          ErrorType = "ETOKEN_INVALID"
+	ErrorInvalidFlag           ErrorType = "EFLAG_INVALID"
+	ErrorInvalidOrganization   ErrorType = "EORGANIZATION_INVALID"
+	ErrorInvalidWorkspace      ErrorType = "EWORKSPACE_INVALID"
+	ErrorInvalidGit            ErrorType = "EGIT_INVALID"
+	ErrorInvalidYarn           ErrorType = "EYARN_INVALID"
+	ErrorInvalidBuild          ErrorType = "EBUILD_INVALID"
+	ErrorInvalidCloudOperation ErrorType = "ECLOUD_OPERATION_INVALID"
 
-	CommandRoot       string = "sublime"
-	CommandFlagRoot   string = "root"
-	CommandFlagConfig string = "config"
+	CommandRoot                      string = "sublime"
+	CommandFlagRoot                  string = "root"
+	CommandFlagConfig                string = "config"
+	CommandFlagWorkspaceOrganization string = "organization"
 
 	CommandRegister  string = "register"
 	CommandLogin     string = "login"
@@ -123,4 +132,23 @@ const (
 	MessageCommandWorkspaceLong  string = `Workspace is a monorepo structure powered by turbo with the ability to create javascript packages.
 	It supports typescript, vue, lit and solidjs governed by vite and all are build as web components.
 	`
+	MessageCommandWorkspaceOrganization      string = "Github organization name [REQUIRED]"
+	MessageCommandWorkspaceProgressInit      string = "Starting create monorepo structure"
+	MessageCommandWorkspaceProgressWorkflows string = "Initialise monorepo workflows"
+	MessageCommandWorkspaceProgressGit       string = "Initialise git on workspace"
+	MessageCommandWorkspaceProgressYarn      string = "Initialise yarn on workspace"
+	MessageCommandWorkspaceProgressVite      string = "Starting building vite plugin"
+	MessageCommandWorkspaceProgressCloud     string = "Publish workspace on cloud platform"
+	MessageCommandWorkspaceSuccess           string = "Your workspace is ready. Create your first package."
+
+	MessageCommandWorkspaceNamePrompt        string = "Provide workspace name:"
+	MessageCommandWorkspaceRepoPrompt        string = "Provide short name repo [org/repo]:"
+	MessageCommandWorkspaceDescriptionPrompt string = "Provide a workspace description:"
+
+	MessageErrorCommandWorkspaceInvalidOrganization string = "Author not allowed in this domain/organization."
+	MessageErrorCommandWorkspaceNamePrompt          string = "Name provided is not valid."
+	MessageErrorCommandWorkspaceRepoPrompt          string = "Repo provided is not valid."
+	MessageErrorCommandWorkspaceDescriptionPrompt   string = "Description provided is not valid."
+	MessageErrorCommandWorkspaceInvalidNamespace    string = "Please provide a valid github organization name without @."
+	MessageErrorCommandWorkspaceInvalidDirectory    string = "Cannot create workspace folder."
 )

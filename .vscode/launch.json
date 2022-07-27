@@ -34,12 +34,8 @@
             "program": "${workspaceFolder}",
             "args": [
                 "workspace",
-                "--name", 
-                "sublime-ui", 
                 "--organization",
-                "websublime", 
-                "--repo",
-                "websublime/sublime-ui", 
+                "websublime",
             ]
         },
         {
