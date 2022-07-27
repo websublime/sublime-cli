@@ -34,7 +34,7 @@ import (
 var app = NewApp()
 
 type App struct {
-	Author models.AuthorFileProps `json:"author"`
+	Author *models.AuthorFileProps `json:"author"`
 }
 
 func NewApp() *App {
@@ -43,6 +43,26 @@ func NewApp() *App {
 
 func GetApp() *App {
 	return app
+}
+
+func (ctx *App) InitAuthor() error {
+	config := GetConfig()
+	rcFile := filepath.Join(config.HomeDir, ".sublime/rc.json")
+	rcJson, err := os.ReadFile(rcFile)
+	if err != nil {
+		return errors.New(utils.MessageErrorAuthorFileMissing)
+	}
+
+	authorMetadata := &models.AuthorFileProps{}
+
+	err = json.Unmarshal(rcJson, &authorMetadata)
+	if err != nil {
+		return errors.New(utils.MessageErrorParseFile)
+	}
+
+	ctx.Author = authorMetadata
+
+	return nil
 }
 
 func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {

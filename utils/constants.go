@@ -41,6 +41,7 @@ const (
 	ErrorPromptInvalid    ErrorType = "EPROMPT_INVALID"
 	ErrorInvalidAuthor    ErrorType = "EAUTHOR_INVALID"
 	ErrorInvalidTemplate  ErrorType = "ETEMPLATE_INVALID"
+	ErrorInvalidToken     ErrorType = "ETOKEN_INVALID"
 
 	CommandRoot       string = "sublime"
 	CommandFlagRoot   string = "root"
@@ -53,10 +54,11 @@ const (
 	MessageCommandRootUsage   string = "Project working dir, default to current dir."
 	MessageCommandRootShort   string = "CLI tool to manage monorepo packages."
 
-	MessageErrorAuthorFileMissing string = "Author file not found. Please register first then login to cloud service."
-	MessageErrorParseFile         string = "Unable to parse file."
-	MessageErrorIndentFile        string = "Unable to indent file."
-	MessageErrorWriteFile         string = "Unable to write file"
+	MessageErrorAuthorFileMissing  string = "Author file not found. Please register first then login to cloud service."
+	MessageErrorParseFile          string = "Unable to parse file."
+	MessageErrorIndentFile         string = "Unable to indent file."
+	MessageErrorWriteFile          string = "Unable to write file"
+	MessageErrorAuthorTokenMissing string = "Author is not authenticated. Please login first."
 
 	// Register command
 	MessageCommandRegisterShort string = "Register author on sublime cloud platform."

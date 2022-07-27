@@ -22,12 +22,20 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/websublime/sublime-cli/api"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/models"
 	"github.com/websublime/sublime-cli/utils"
 )
 
@@ -62,6 +70,8 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		banner()
+		executeAuthorValidation()
+		executeTokenExpirationValidation()
 		initializeCommand(rootFlags)
 	})
 
@@ -105,5 +115,67 @@ func initializeCommand(rootFlags *RootFlags) {
 
 	if err := viper.ReadInConfig(); err == nil {
 		// configFile := viper.ConfigFileUsed()
+	}
+}
+
+func executeAuthorValidation() {
+	flags := os.Args[1:]
+
+	if !isCommandExclude(flags) {
+		app := core.GetApp()
+
+		err := app.InitAuthor()
+		if err != nil {
+			utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
+		}
+
+		if app.Author.Token == "" {
+			utils.ErrorOut(utils.MessageErrorAuthorTokenMissing, utils.ErrorInvalidAuthor)
+		}
+	}
+}
+
+func executeTokenExpirationValidation() {
+	flags := os.Args[1:]
+
+	if !isCommandExclude(flags) {
+		app := core.GetApp()
+
+		now := time.Now()
+		expiration := time.Unix(app.Author.Expire, 0)
+
+		if now.After(expiration) {
+			supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
+			refresh, err := supabase.RefreshToken(app.Author.Refresh)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidToken)
+			}
+
+			tokenStrings := strings.Split(refresh.Token, ".")
+			claimString, _ := base64.StdEncoding.DecodeString(tokenStrings[1])
+			regex := regexp.MustCompile(`(?m)(exp*.":)(\d*)`)
+
+			parts := regex.FindStringSubmatch(string(claimString))
+			expires, _ := strconv.ParseInt(parts[2], 10, 64)
+
+			refresh.Expires = expires
+
+			err = app.UpdateAuthorMetadata(&models.AuthorFileProps{
+				Expire:  refresh.Expires,
+				Token:   refresh.Token,
+				Refresh: refresh.RefreshToken,
+			})
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
+			}
+		}
+	}
+}
+
+func isCommandExclude(flags []string) bool {
+	if utils.Contains(flags, "action") || utils.Contains(flags, "login") || utils.Contains(flags, "register") {
+		return true
+	} else {
+		return false
 	}
 }
