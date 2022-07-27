@@ -145,6 +145,8 @@ func executeTokenExpirationValidation() {
 		expiration := time.Unix(app.Author.Expire, 0)
 
 		if now.After(expiration) {
+			utils.InfoOut(utils.MessageCommandRootTokenExpire)
+
 			supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
 			refresh, err := supabase.RefreshToken(app.Author.Refresh)
 			if err != nil {

@@ -25,9 +25,18 @@ type ErrorType string
 
 type PackageType string
 
+type TemplateType string
+
 const (
 	Library PackageType = "lib"
 	Package PackageType = "pkg"
+)
+
+const (
+	Lit        TemplateType = "lit"
+	Solid      TemplateType = "solid"
+	Vue        TemplateType = "vue"
+	Typescript TemplateType = "typescript"
 )
 
 const (
@@ -47,12 +56,15 @@ const (
 	CommandFlagRoot   string = "root"
 	CommandFlagConfig string = "config"
 
-	CommandRegister string = "register"
-	CommandLogin    string = "login"
+	CommandRegister  string = "register"
+	CommandLogin     string = "login"
+	CommandWorkspace string = "workspace"
+	CommandCreate    string = "create"
 
-	MessageCommandConfigUsage string = "Config file (default is .sublime.json)."
-	MessageCommandRootUsage   string = "Project working dir, default to current dir."
-	MessageCommandRootShort   string = "CLI tool to manage monorepo packages."
+	MessageCommandConfigUsage     string = "Config file (default is .sublime.json)."
+	MessageCommandRootUsage       string = "Project working dir, default to current dir."
+	MessageCommandRootShort       string = "CLI tool to manage monorepo packages."
+	MessageCommandRootTokenExpire string = "Your token is expired. Start renew action."
 
 	MessageErrorAuthorFileMissing  string = "Author file not found. Please register first then login to cloud service."
 	MessageErrorParseFile          string = "Unable to parse file."
@@ -105,4 +117,10 @@ const (
 
 	MessageErrorCommandLoginEmailPrompt    string = "Email is not valid."
 	MessageErrorCommandLoginPasswordPrompt string = "Password is not valid."
+
+	// Workspace command
+	MessageCommandWorkspaceShort string = "Create a workspace."
+	MessageCommandWorkspaceLong  string = `Workspace is a monorepo structure powered by turbo with the ability to create javascript packages.
+	It supports typescript, vue, lit and solidjs governed by vite and all are build as web components.
+	`
 )
