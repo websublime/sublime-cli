@@ -113,12 +113,12 @@ func (ctx *Supabase) GetOrganizationByUser(userID string) ([]models.Organization
 	return model, nil
 }
 
-func (ctx *Supabase) ValidateUserOrganization(organization string) (bool, error) {
+func (ctx *Supabase) ValidateUserOrganization(authorID string, organization string) (bool, error) {
 	var isUserOrganization bool = false
 
 	app := core.GetApp()
 
-	organizations, err := ctx.GetOrganizationByUser(app.Author.ID)
+	organizations, err := ctx.GetOrganizationByUser(authorID)
 	if err != nil {
 		return isUserOrganization, err
 	}

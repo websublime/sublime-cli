@@ -47,13 +47,7 @@
             "args": [
                 "--root", 
                 "./sublime-ui",
-                "create",
-                "--name", 
-                "ui-common", 
-                "--type", 
-                "pkg", 
-                "--template", 
-                "lit" 
+                "create"
             ]
         },
         {

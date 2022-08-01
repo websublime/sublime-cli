@@ -27,6 +27,11 @@ type PackageType string
 
 type TemplateType string
 
+type Templates struct {
+	Link     string       `json:"link"`
+	Template TemplateType `json:"template"`
+}
+
 const (
 	Library PackageType = "lib"
 	Package PackageType = "pkg"
@@ -38,6 +43,25 @@ const (
 	Vue        TemplateType = "vue"
 	Typescript TemplateType = "typescript"
 )
+
+var TemplatesMap = []Templates{
+	{
+		Template: Vue,
+		Link:     "git@github.com:websublime/sublime-vue-template.git",
+	},
+	{
+		Template: Lit,
+		Link:     "git@github.com:websublime/sublime-lit-template.git",
+	},
+	{
+		Template: Solid,
+		Link:     "git@github.com:websublime/sublime-solid-template.git",
+	},
+	{
+		Template: Typescript,
+		Link:     "git@github.com:websublime/sublime-typescript-template.git",
+	},
+}
 
 const (
 	ErrorUnknown               ErrorType = "E_UNKNOWN"
@@ -59,6 +83,8 @@ const (
 	ErrorInvalidYarn           ErrorType = "EYARN_INVALID"
 	ErrorInvalidBuild          ErrorType = "EBUILD_INVALID"
 	ErrorInvalidCloudOperation ErrorType = "ECLOUD_OPERATION_INVALID"
+	ErrorInvalidaIndentation   ErrorType = "EINDENTATION_INVALID"
+	ErrorInvalidTypescript     ErrorType = "ETYPESCRIPT_INVALID"
 
 	CommandRoot                      string = "sublime"
 	CommandFlagRoot                  string = "root"
@@ -133,7 +159,7 @@ const (
 	It supports typescript, vue, lit and solidjs governed by vite and all are build as web components.
 	`
 	MessageCommandWorkspaceOrganization      string = "Github organization name [REQUIRED]"
-	MessageCommandWorkspaceProgressInit      string = "Starting create monorepo structure"
+	MessageCommandWorkspaceProgressInit      string = "Starting creating monorepo structure"
 	MessageCommandWorkspaceProgressWorkflows string = "Initialise monorepo workflows"
 	MessageCommandWorkspaceProgressGit       string = "Initialise git on workspace"
 	MessageCommandWorkspaceProgressYarn      string = "Initialise yarn on workspace"
@@ -151,4 +177,21 @@ const (
 	MessageErrorCommandWorkspaceDescriptionPrompt   string = "Description provided is not valid."
 	MessageErrorCommandWorkspaceInvalidNamespace    string = "Please provide a valid github organization name without @."
 	MessageErrorCommandWorkspaceInvalidDirectory    string = "Cannot create workspace folder."
+
+	// Create command
+	MessageCommandCreateShort string = "Create JS/TS packages"
+	MessageCommandCreateLong  string = "Create JS/TS packages based on templates provided by the CLI tool."
+
+	MessageCommandCreateProgressInit   string = "Starting creating package structure"
+	MessageCommandCreateProgressUpdate string = "Updating monorepo files"
+	MessageCommandCreateProgressYarn   string = "Yarn linking and install packages"
+	MessageCommandCreateProgressCloud  string = "Creating package on cloud organisation"
+	MessageCommandCreateSuccess        string = "Your package is ready. Start working on it."
+
+	MessageCommandCreateNamePrompt     string = "Provide the package name:"
+	MessageCommandCreateTypePrompt     string = "Provide the package type:"
+	MessageCommandCreateTemplatePrompt string = "Provide the template type:"
+
+	MessageErrorCommandCreateNamePrompt      string = "Name provided is not valid."
+	MessageErrorCommandCreateTemplateInvalid string = "Template type is invalid."
 )

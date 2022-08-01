@@ -101,7 +101,7 @@ func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 
 func (ctx *App) UpdateWorkspace(workspace *models.Workspace) error {
 	config := GetConfig()
-	sublimeFile := filepath.Join(config.RootDir, workspace.Name, ".sublime.json")
+	sublimeFile := filepath.Join(config.RootDir, ".sublime.json")
 	sublimeJson, err := os.ReadFile(sublimeFile)
 	if err != nil {
 		return errors.New(utils.MessageErrorAuthorFileMissing)
@@ -127,4 +127,53 @@ func (ctx *App) UpdateWorkspace(workspace *models.Workspace) error {
 	}
 
 	return nil
+}
+
+func (ctx *App) UpdatePackage(packages *models.Package) error {
+	config := GetConfig()
+	sublimeFile := filepath.Join(config.RootDir, ".sublime.json")
+	sublimeJson, err := os.ReadFile(sublimeFile)
+	if err != nil {
+		return errors.New(utils.MessageErrorAuthorFileMissing)
+	}
+
+	sublimeMetadata := models.SublimeJsonFileProps{}
+
+	err = json.Unmarshal(sublimeJson, &sublimeMetadata)
+	if err != nil {
+		return errors.New(utils.MessageErrorParseFile)
+	}
+
+	for i := range sublimeMetadata.Packages {
+		if sublimeMetadata.Packages[i].Name == packages.Name {
+			sublimeMetadata.Packages[i].ID = packages.ID
+			break
+		}
+	}
+
+	data, err := json.MarshalIndent(sublimeMetadata, "", " ")
+	if err != nil {
+		return errors.New(utils.MessageErrorIndentFile)
+	}
+
+	err = os.WriteFile(sublimeFile, data, 0644)
+	if err != nil {
+		return errors.New(utils.MessageErrorWriteFile)
+	}
+
+	return nil
+}
+
+func (ctx *App) GetTsconfig() (*models.TsconfigBase, error) {
+	config := GetConfig()
+	tsconfig := &models.TsconfigBase{}
+	data, err := os.ReadFile(filepath.Join(config.RootDir, "tsconfig.base.json"))
+
+	if err != nil {
+		return nil, errors.New(string(utils.ErrorReadFile))
+	}
+
+	json.Unmarshal(data, &tsconfig)
+
+	return tsconfig, nil
 }

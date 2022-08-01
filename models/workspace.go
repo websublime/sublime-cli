@@ -21,6 +21,8 @@ THE SOFTWARE.
 */
 package models
 
+import "github.com/websublime/sublime-cli/utils"
+
 type PackageJsonFileProps struct {
 	Name      string
 	Namespace string
@@ -43,14 +45,34 @@ type TsConfigJsonFileProps struct {
 	Vite      string
 }
 
+type SublimePackages struct {
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Scope       string            `json:"scope"`
+	Type        utils.PackageType `json:"type"`
+	Description string            `json:"description"`
+}
+
 type SublimeJsonFileProps struct {
-	Name         string `json:"name"`
-	Repo         string `json:"repo"`
-	Namespace    string `json:"namespace"`
-	Root         string `json:"root"`
-	Organization string `json:"organization"`
-	ID           string `json:"id"`
-	Description  string `json:"description"`
+	Name         string            `json:"name"`
+	Repo         string            `json:"repo"`
+	Namespace    string            `json:"namespace"`
+	Root         string            `json:"root"`
+	Organization string            `json:"organization"`
+	ID           string            `json:"id"`
+	Description  string            `json:"description"`
+	Packages     []SublimePackages `json:"packages"`
+}
+
+type SublimeViperProps struct {
+	Name         string            `mapstructure:"name"`
+	Repo         string            `mapstructure:"repo"`
+	Namespace    string            `mapstructure:"namespace"`
+	Root         string            `mapstructure:"root"`
+	Organization string            `mapstructure:"organization"`
+	ID           string            `mapstructure:"id"`
+	Description  string            `mapstructure:"description"`
+	Packages     []SublimePackages `mapstructure:"packages"`
 }
 
 type ReadmeFileProps struct {
@@ -69,6 +91,36 @@ type ArtifactsYamlFileProps struct {
 	Version string
 }
 
+type ApiExtractorFileProps struct {
+	Name string
+}
+
+type TsconfigBase struct {
+	CompilerOptions TsconfigCompilerOptions `json:"compilerOptions"`
+	References      []TsConfigReferences    `json:"references"`
+	Exclude         []string                `json:"exclude"`
+}
+
+type TsconfigCompilerOptions struct {
+	Target                  string `json:"target"`
+	UseDefineForClassFields bool   `json:"useDefineForClassFields"`
+	Module                  string `json:"module"`
+	ModuleResolution        string `json:"moduleResolution"`
+	Strict                  bool   `json:"strict"`
+	SourceMap               bool   `json:"sourceMap"`
+	ResolveJsonModule       bool   `json:"resolveJsonModule"`
+	EsModuleInterop         bool   `json:"esModuleInterop"`
+	Declaration             bool   `json:"declaration"`
+	SkipLibCheck            bool   `json:"skipLibCheck"`
+	Composite               bool   `json:"composite"`
+	Incremental             bool   `json:"incremental"`
+}
+
+type TsConfigReferences struct {
+	Path string `json:"path"`
+	Name string `json:"name"`
+}
+
 type Workspace struct {
 	ID             string `json:"id,omitempty"`
 	Name           string `json:"name,omitempty"`
@@ -76,6 +128,17 @@ type Workspace struct {
 	Description    string `json:"description,omitempty"`
 	OrganizationID string `json:"organization_id,omitempty"`
 	Private        bool   `json:"private,omitempty"`
+}
+
+type WorkspacesByOrganizationResponse struct {
+	ID             string `json:"id,omitempty"`
+	Name           string `json:"name,omitempty"`
+	Repo           string `json:"repo,omitempty"`
+	Description    string `json:"description,omitempty"`
+	OrganizationID string `json:"organization_id,omitempty"`
+	Private        bool   `json:"private,omitempty"`
+	CreatedAt      string `json:"created_at,omitempty"`
+	CreatedBy      string `json:"created_by,omitempty"`
 }
 
 func NewWorkspace(name string, repo string, description string, orgID string) *Workspace {

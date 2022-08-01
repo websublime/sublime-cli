@@ -25,6 +25,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -114,7 +115,9 @@ func initializeCommand(rootFlags *RootFlags) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		// configFile := viper.ConfigFileUsed()
+		configFile := viper.ConfigFileUsed()
+
+		config.SetRootDir(filepath.Dir(configFile))
 	}
 }
 

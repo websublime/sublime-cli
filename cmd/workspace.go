@@ -71,7 +71,7 @@ func NewWorkspaceCmd(cmdWorkspace *CreateWorkspace) *cobra.Command {
 			}
 
 			supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, app.Author.Token, "production")
-			isUserOrganization, err := supabase.ValidateUserOrganization(organization)
+			isUserOrganization, err := supabase.ValidateUserOrganization(app.Author.ID, organization)
 			if err != nil {
 				utils.ErrorOut(err.Error(), utils.ErrorInvalidOrganization)
 			}

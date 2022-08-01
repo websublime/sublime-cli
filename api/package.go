@@ -22,6 +22,7 @@ THE SOFTWARE.
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,16 +30,21 @@ import (
 	"net/http"
 
 	"github.com/websublime/sublime-cli/models"
+	"github.com/websublime/sublime-cli/utils"
 )
 
-func (ctx *Supabase) DeleteWorkspaceByID(workspaceID string) (models.Workspace, error) {
-	model := models.Workspace{
-		ID: workspaceID,
+func (ctx *Supabase) CreateWorkspacePackage(name string, description string, types utils.PackageType, template utils.TemplateType, workspaceID string) ([]models.Package, error) {
+	workspace := models.NewPackage(name, description, types, template, workspaceID)
+	model := []models.Package{}
+
+	payload, err := json.Marshal(workspace)
+	if err != nil {
+		return model, err
 	}
 
-	uri := fmt.Sprintf("%s/%s/workspaces?id=eq.%s", ctx.BaseURL, RestEndpoint, workspaceID)
+	uri := fmt.Sprintf("%s/%s/packages", ctx.BaseURL, RestEndpoint)
 
-	req, err := http.NewRequest("DELETE", uri, nil)
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
 	if err != nil {
 		return model, err
 	}
@@ -71,17 +77,21 @@ func (ctx *Supabase) DeleteWorkspaceByID(workspaceID string) (models.Workspace, 
 	return model, nil
 }
 
-func (ctx *Supabase) GetWorkspacesByOrganization(orgID string) ([]models.WorkspacesByOrganizationResponse, error) {
-	uri := fmt.Sprintf("%s/%s/workspaces?organization_id=eq.%s", ctx.BaseURL, RestEndpoint, orgID)
-	model := []models.WorkspacesByOrganizationResponse{}
+func (ctx *Supabase) DeletePackageByID(packageID string) (models.Package, error) {
+	model := models.Package{
+		ID: packageID,
+	}
 
-	req, err := http.NewRequest("GET", uri, nil)
+	uri := fmt.Sprintf("%s/%s/packages?id=eq.%s", ctx.BaseURL, RestEndpoint, packageID)
+
+	req, err := http.NewRequest("DELETE", uri, nil)
 	if err != nil {
 		return model, err
 	}
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
+	req.Header.Add("Prefer", "return=representation")
 
 	response, err := ctx.HTTPClient.Do(req)
 	if err != nil {
@@ -105,22 +115,4 @@ func (ctx *Supabase) GetWorkspacesByOrganization(orgID string) ([]models.Workspa
 	}
 
 	return model, nil
-}
-
-func (ctx *Supabase) ValidateWorkspaceOrganization(workspaceID string, orgID string) (bool, error) {
-	var isWorkspaceOrganization bool = false
-
-	workspaces, err := ctx.GetWorkspacesByOrganization(orgID)
-	if err != nil {
-		return isWorkspaceOrganization, err
-	}
-
-	for _, wks := range workspaces {
-		if wks.ID == workspaceID {
-			isWorkspaceOrganization = true
-			break
-		}
-	}
-
-	return isWorkspaceOrganization, nil
 }
