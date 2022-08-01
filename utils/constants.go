@@ -27,10 +27,26 @@ type PackageType string
 
 type TemplateType string
 
+type GitType string
+
+type EnvType string
+
 type Templates struct {
 	Link     string       `json:"link"`
 	Template TemplateType `json:"template"`
 }
+
+const (
+	Production EnvType = "production"
+	Local      EnvType = "local"
+	Develop    EnvType = "develop"
+	Test       EnvType = "test"
+)
+
+const (
+	Tag    GitType = "tag"
+	Branch GitType = "branch"
+)
 
 const (
 	Library PackageType = "lib"
@@ -95,6 +111,7 @@ const (
 	CommandLogin     string = "login"
 	CommandWorkspace string = "workspace"
 	CommandCreate    string = "create"
+	CommandAction    string = "actio"
 
 	MessageCommandConfigUsage     string = "Config file (default is .sublime.json)."
 	MessageCommandRootUsage       string = "Project working dir, default to current dir."
