@@ -122,6 +122,7 @@ const (
 	MessageErrorParseFile          string = "Unable to parse file."
 	MessageErrorIndentFile         string = "Unable to indent file."
 	MessageErrorWriteFile          string = "Unable to write file"
+	MessageErrorReadFile           string = "Unable to read file"
 	MessageErrorAuthorTokenMissing string = "Author is not authenticated. Please login first."
 
 	// Register command

@@ -101,10 +101,10 @@ func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 
 func (ctx *App) UpdateWorkspace(workspace *models.Workspace) error {
 	config := GetConfig()
-	sublimeFile := filepath.Join(config.RootDir, ".sublime.json")
+	sublimeFile := filepath.Join(config.RootDir, workspace.Name, ".sublime.json")
 	sublimeJson, err := os.ReadFile(sublimeFile)
 	if err != nil {
-		return errors.New(utils.MessageErrorAuthorFileMissing)
+		return errors.New(utils.MessageErrorReadFile)
 	}
 
 	sublimeMetadata := models.SublimeJsonFileProps{}
@@ -159,6 +159,29 @@ func (ctx *App) UpdatePackage(packages *models.Package) error {
 	err = os.WriteFile(sublimeFile, data, 0644)
 	if err != nil {
 		return errors.New(utils.MessageErrorWriteFile)
+	}
+
+	return nil
+}
+
+func (ctx *App) RemoveConfigurationsOnPackageError(packages *models.Package) error {
+	config := GetConfig()
+	sublimeFile := filepath.Join(config.RootDir, ".sublime.json")
+	sublimeJson, err := os.ReadFile(sublimeFile)
+	if err != nil {
+		return errors.New(utils.MessageErrorAuthorFileMissing)
+	}
+
+	sublimeMetadata := models.SublimeJsonFileProps{}
+
+	err = json.Unmarshal(sublimeJson, &sublimeMetadata)
+	if err != nil {
+		return errors.New(utils.MessageErrorParseFile)
+	}
+
+	_, err = ctx.GetTsconfig()
+	if err != nil {
+		return err
 	}
 
 	return nil

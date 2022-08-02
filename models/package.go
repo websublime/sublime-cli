@@ -24,7 +24,7 @@ package models
 import "github.com/websublime/sublime-cli/utils"
 
 type Package struct {
-	ID          string             `json:"id"`
+	ID          string             `json:"id,omitempty"`
 	Name        string             `json:"name"`
 	Type        utils.PackageType  `json:"type"`
 	Description string             `json:"description"`
