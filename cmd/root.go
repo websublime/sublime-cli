@@ -178,6 +178,10 @@ func executeTokenExpirationValidation() {
 }
 
 func isCommandExclude(flags []string) bool {
+	if len(flags) == 0 {
+		return true
+	}
+
 	if utils.Contains(flags, "action") || utils.Contains(flags, "login") || utils.Contains(flags, "register") {
 		return true
 	} else {
