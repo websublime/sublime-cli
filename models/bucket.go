@@ -19,11 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package utils
+package models
 
-//https://github.com/supabase/supabase/discussions/2337
-var (
-	ApiUrl    string = "https://debvasmsyxrewpmqckdv.supabase.co"
-	ApiKey    string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ3OTM3NzUsImV4cCI6MTk3MDM2OTc3NX0.J2JZZ8IHInHwuGxNim4vpoLTx2ij344A1oOh1rIwbok"
-	ApiSecret string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY1NDc5Mzc3NSwiZXhwIjoxOTcwMzY5Nzc1fQ.4Acn3-J293Bxo807K0NbNgzNvgPKyAop5aq2jvVzSMY"
-)
+type Bucket struct {
+	ID        string `json:"id,omitempty"`
+	Name      string `json:"name"`
+	Public    bool   `json:"public"`
+	Owner     string `json:"owner,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+	UpdatedAt string `json:"updated_at,omitempty"`
+}
+
+type BucketUpload struct {
+	Key string `json:"key"`
+}
+
+func NewBucket(name string, id string, public bool) *Bucket {
+	return &Bucket{
+		Name:   name,
+		ID:     id,
+		Public: public,
+	}
+}

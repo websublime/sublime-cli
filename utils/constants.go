@@ -209,16 +209,26 @@ const (
 	MessageCommandCreateProgressCloud  string = "Creating package on cloud organisation"
 	MessageCommandCreateSuccess        string = "Your package is ready. Start working on it."
 
-	MessageCommandCreateNamePrompt     string = "Provide the package name:"
-	MessageCommandCreateTypePrompt     string = "Provide the package type:"
-	MessageCommandCreateTemplatePrompt string = "Provide the template type:"
+	MessageCommandCreateNamePrompt        string = "Provide the package name:"
+	MessageCommandCreateTypePrompt        string = "Provide the package type:"
+	MessageCommandCreateTemplatePrompt    string = "Provide the template type:"
+	MessageCommandCreateDescriptionPrompt string = "Provide package description:"
 
-	MessageErrorCommandCreateNamePrompt      string = "Name provided is not valid."
-	MessageErrorCommandCreateTemplateInvalid string = "Template type is invalid."
+	MessageErrorCommandCreateNamePrompt        string = "Name provided is not valid."
+	MessageErrorCommandCreateTemplateInvalid   string = "Template type is invalid."
+	MessageErrorCommandCreateDescriptionPrompt string = "Description provided is not valid."
 
 	// Action command
 	MessageCommandActionShort string = "Github action command"
 	MessageCommandActionLong  string = "Action command is built to run on github workflows to create artifacts of the packages."
 
-	MessageErrorCommandActionEnv string = "Action command can only run on CI environments."
+	MessageCommandActionTypeUnknown   string = "The git type is not valid."
+	MessageCommandActionNoPackages    string = "No packages founded to build artifacts."
+	MessageCommandActionFoundPackages string = "Founded %d package to build artifacts."
+	MessageCommandActionUploadFile    string = "File uploaded to %s with key: %s"
+	MessageCommandActionArtifact      string = "Artifact uploaded to bucket."
+	MessageCommandActionVersionUpdate string = "Package %s updated to version: %s."
+
+	MessageErrorCommandActionEnv       string = "Action command can only run on CI environments."
+	MessageErrorCommandActionNoCommits string = "No commits founded. Please commit first."
 )

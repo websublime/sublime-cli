@@ -13,7 +13,9 @@
             "env": {
                 "CI": "true"
             },
-            "args": [ 
+            "args": [
+                "--root", 
+                "../sublime-ui", 
                 "action", 
                 "--type", 
                 "branch", 

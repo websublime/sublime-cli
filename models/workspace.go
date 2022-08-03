@@ -23,6 +23,21 @@ package models
 
 import "github.com/websublime/sublime-cli/utils"
 
+type PackageJson struct {
+	Name            string            `json:"name"`
+	Version         string            `json:"version"`
+	Description     string            `json:"description"`
+	Main            string            `json:"main"`
+	Typings         string            `json:"typings"`
+	Module          string            `json:"module"`
+	Scripts         map[string]string `json:"scripts"`
+	Keywords        []string          `json:"keywords"`
+	Author          string            `json:"author"`
+	License         string            `json:"license"`
+	Dependencies    map[string]string `json:"dependencies"`
+	DevDependencies map[string]string `json:"devDependencies"`
+}
+
 type PackageJsonFileProps struct {
 	Name      string
 	Namespace string

@@ -106,6 +106,12 @@ func (ctx *CreateFlags) Run(cmd *cobra.Command) {
 		Hide:  false,
 	}
 
+	descriptionContent := models.PromptContent{
+		Error: utils.MessageErrorCommandCreateDescriptionPrompt,
+		Label: utils.MessageCommandCreateDescriptionPrompt,
+		Hide:  false,
+	}
+
 	typesContent := models.PromptSelectContent{
 		Label: utils.MessageCommandCreateTypePrompt,
 		Items: []string{fmt.Sprintf("Package: %s", string(utils.Package)), fmt.Sprintf("Library: %s", string(utils.Library))},
@@ -122,6 +128,11 @@ func (ctx *CreateFlags) Run(cmd *cobra.Command) {
 	}
 
 	name, err := models.PromptGetInput(nameContent, 3)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+
+	description, err := models.PromptGetInput(descriptionContent, 3)
 	if err != nil {
 		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
 	}
@@ -153,6 +164,7 @@ func (ctx *CreateFlags) Run(cmd *cobra.Command) {
 	}
 
 	ctx.Name = slug.Make(name)
+	ctx.Description = description
 }
 
 func (ctx *CreateFlags) CreatePackage() {
@@ -332,7 +344,7 @@ func (ctx *CreateFlags) UpdateRepoFiles() {
 
 	tsConfigBase, err := app.GetTsconfig()
 	if err != nil {
-		app.RemoveConfigurationsOnPackageError(ctx.Name)
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
 		ctx.CommandError(err.Error(), utils.ErrorInvalidTypescript)
 	}
 
@@ -343,13 +355,13 @@ func (ctx *CreateFlags) UpdateRepoFiles() {
 
 	tsconfig, err := json.MarshalIndent(tsConfigBase, "", " ")
 	if err != nil {
-		app.RemoveConfigurationsOnPackageError(ctx.Name)
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
 		ctx.CommandError(err.Error(), utils.ErrorInvalidaIndentation)
 	}
 
 	err = os.WriteFile(filepath.Join(config.RootDir, "tsconfig.base.json"), tsconfig, 0644)
 	if err != nil {
-		app.RemoveConfigurationsOnPackageError(ctx.Name)
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
 		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
 	}
 
@@ -367,7 +379,7 @@ func (ctx *CreateFlags) YarnLink() {
 
 	_, err := utils.YarnInstall(config.RootDir)
 	if err != nil {
-		app.RemoveConfigurationsOnPackageError(ctx.Name)
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
 		ctx.CommandError(err.Error(), utils.ErrorInvalidYarn)
 	}
 
@@ -386,14 +398,14 @@ func (ctx *CreateFlags) CreateCloudPackage() {
 	supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, app.Author.Token, "production")
 	packages, err := supabase.CreateWorkspacePackage(ctx.Name, ctx.Description, ctx.Type, ctx.Template, ctx.Sublime.ID)
 	if err != nil {
-		app.RemoveConfigurationsOnPackageError(ctx.Name)
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
 		ctx.CommandError(err.Error(), utils.ErrorInvalidCloudOperation)
 	}
 
 	config.UpdateProgress(utils.MessageCommandCreateProgressCloud, 6)
 	err = app.UpdatePackage(&packages[0])
 	if err != nil {
-		app.RemoveConfigurationsOnPackageError(ctx.Name)
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
 		_, _ = supabase.DeletePackageByID(packages[0].ID)
 		ctx.CommandError(err.Error(), utils.ErrorInvalidCloudOperation)
 	}

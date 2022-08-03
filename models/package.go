@@ -25,12 +25,12 @@ import "github.com/websublime/sublime-cli/utils"
 
 type Package struct {
 	ID          string             `json:"id,omitempty"`
-	Name        string             `json:"name"`
-	Type        utils.PackageType  `json:"type"`
-	Description string             `json:"description"`
-	WorkspaceID string             `json:"workspace_id"`
-	Version     string             `json:"version"`
-	Template    utils.TemplateType `json:"template"`
+	Name        string             `json:"name,omitempty"`
+	Type        utils.PackageType  `json:"type,omitempty"`
+	Description string             `json:"description,omitempty"`
+	WorkspaceID string             `json:"workspace_id,omitempty"`
+	Version     string             `json:"version,omitempty"`
+	Template    utils.TemplateType `json:"template,omitempty"`
 	CreatedAt   string             `json:"created_at,omitempty"`
 	CreatedBy   string             `json:"created_by,omitempty"`
 }
@@ -42,5 +42,6 @@ func NewPackage(name string, description string, types utils.PackageType, templa
 		Type:        types,
 		Template:    template,
 		WorkspaceID: workspaceID,
+		Version:     "0.0.0",
 	}
 }

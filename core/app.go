@@ -26,6 +26,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/websublime/sublime-cli/models"
 	"github.com/websublime/sublime-cli/utils"
@@ -164,7 +165,7 @@ func (ctx *App) UpdatePackage(packages *models.Package) error {
 	return nil
 }
 
-func (ctx *App) RemoveConfigurationsOnPackageError(packageName string) error {
+func (ctx *App) RemoveConfigurationsOnPackageError(packageName string, packageType string) error {
 	config := GetConfig()
 
 	tsFile := filepath.Join(config.RootDir, "tsconfig.base.json")
@@ -198,7 +199,7 @@ func (ctx *App) RemoveConfigurationsOnPackageError(packageName string) error {
 	sublimeMetadata.Packages = sublimePackages
 
 	for _, cfg := range tsconfig.References {
-		if cfg.Name != packageName {
+		if cfg.Path != strings.Join([]string{packageType, packageName}, "/") {
 			configReferences = append(configReferences, cfg)
 		}
 	}

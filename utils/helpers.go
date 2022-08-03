@@ -245,6 +245,16 @@ func Contains(args []string, lookup string) bool {
 	return false
 }
 
+func Present(args []string, lookup string) bool {
+	for _, value := range args {
+		if strings.Contains(value, lookup) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Prints error and exit application
 func ErrorOut(message string, code ErrorType) {
 	color.Red.Println(message)
@@ -257,6 +267,10 @@ func InfoOut(message string) {
 
 func SuccessOut(message string) {
 	color.Green.Println(fmt.Sprintf("⭐️ %s", message))
+}
+
+func WarningOut(message string) {
+	color.Yellow.Println(fmt.Sprintf("🌨 %s", message))
 }
 
 func process(t *template.Template, vars interface{}) string {

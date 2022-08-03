@@ -389,6 +389,12 @@ func (ctx *CreateWorkspace) CreateCloudWorkspace() {
 		utils.ErrorOut(err.Error(), utils.ErrorInvalidWorkspace)
 	}
 
+	supa := api.NewSupabase(utils.ApiUrl, utils.ApiSecret, utils.ApiSecret, "production")
+	_, err = supa.CreateOrganizationBucket(ctx.Organization, true)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorInvalidCloudOperation)
+	}
+
 	config.UpdateProgress(utils.MessageCommandWorkspaceProgressCloud, 1)
 	config.TerminateProgress()
 	utils.SuccessOut(utils.MessageCommandWorkspaceSuccess)
