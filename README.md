@@ -56,11 +56,11 @@ Use "sublime [command] --help" for more information about a command.
 
 # Important
 
-After instalation you will need to follow the next steps:
+After installation you will need to follow the next steps:
 
 - Run command to register on the platform: ```sublime register```
 - After registered please confirm your registration sent by email
-- Now go to websublime.dev login and create your organization. Your organization should correspond to the github organization name.
+- Now go to websublime.dev login and create your organization. Your organization should correspond to the github organization name. (WIP)
 - With your organization created please login thru the cli to create your local identity file: ```sublime login```
 - Congrats! You are now able to start creating workspaces on your new organization.
 
@@ -75,11 +75,11 @@ First let's start to create a workspace monorepo. The creation of the workspace 
 The organization should be the github organization name, because artifacts will be release to github and you be able to install it via npm.
 The CLI will prompt you with questions to be answer. All are mandatory.
 
-After created your workspace will be ready to create packages inside of it.
+After created, your workspace will be ready to create packages inside of it.
 
 ## Create package/lib
 
-Creating a library or package. Monorepo has two folders where you can create your packages they are: libs and packages. Packages on libs are designed to be common features to other packages use. You will see that by default one lib is present. This lib is a vite plugin that provide namespace resoltuion automatic between your packages. The CLI will prompt you with questions to be answer. All are mandatory
+Creating a library or package. Monorepo has two folders where you can create your packages they are: libs and packages. Packages on libs are designed to be common features to other packages use. You will see that by default one lib is present. This lib is a vite plugin that provide automatic namespace resolution between packages/libs. The CLI will prompt you with questions to be answer. All are mandatory
 
 ```bash
 > sublime create
@@ -96,11 +96,15 @@ Global parameters, can be used with any command before calling the command itsel
 | --root | The root folder of your workspace |
 | --config | The .sublime.json config file |
 
+```bash
+> sublime --root ./sublime-ui create
+```
+
 If you run the cli from inside your workspace folder this parameters are resolved automatic.
 
 ## Github action
 
-Two predefined actions were created when you created an workspace. This actions will trigger based on:
+Predefined actions were created when you created an workspace. This actions will trigger based on:
 - Branch name as: feat/...
 - Tag creation
 
@@ -121,6 +125,7 @@ Example of what runs on github action.
 # Important
 
 You can adjust your workflows if needeed but be aware that changing the predefined action where it runs sublime action command can break your deploysto the websublime cloud.
+Actions also are based on the package [changeset](https://github.com/changesets/changesets). They are already configured. Please follow the link to know more about it. All your branchs should follow that guideline to create awesome changelogs/issues and independent packages versions.
 
 # Installation
 
