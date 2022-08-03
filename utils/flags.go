@@ -23,7 +23,7 @@ package utils
 
 //https://github.com/supabase/supabase/discussions/2337
 var (
-	ApiUrl    string = "https://debvasmsyxrewpmqckdv.supabase.co"
-	ApiKey    string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTQ3OTM3NzUsImV4cCI6MTk3MDM2OTc3NX0.J2JZZ8IHInHwuGxNim4vpoLTx2ij344A1oOh1rIwbok"
-	ApiSecret string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlYnZhc21zeXhyZXdwbXFja2R2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY1NDc5Mzc3NSwiZXhwIjoxOTcwMzY5Nzc1fQ.4Acn3-J293Bxo807K0NbNgzNvgPKyAop5aq2jvVzSMY"
+	ApiUrl    string = ""
+	ApiKey    string = ""
+	ApiSecret string = ""
 )
