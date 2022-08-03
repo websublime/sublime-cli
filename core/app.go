@@ -164,8 +164,10 @@ func (ctx *App) UpdatePackage(packages *models.Package) error {
 	return nil
 }
 
-func (ctx *App) RemoveConfigurationsOnPackageError(packages *models.Package) error {
+func (ctx *App) RemoveConfigurationsOnPackageError(packageName string) error {
 	config := GetConfig()
+
+	tsFile := filepath.Join(config.RootDir, "tsconfig.base.json")
 	sublimeFile := filepath.Join(config.RootDir, ".sublime.json")
 	sublimeJson, err := os.ReadFile(sublimeFile)
 	if err != nil {
@@ -179,9 +181,48 @@ func (ctx *App) RemoveConfigurationsOnPackageError(packages *models.Package) err
 		return errors.New(utils.MessageErrorParseFile)
 	}
 
-	_, err = ctx.GetTsconfig()
+	tsconfig, err := ctx.GetTsconfig()
 	if err != nil {
 		return err
+	}
+
+	var sublimePackages []models.SublimePackages = []models.SublimePackages{}
+	var configReferences []models.TsConfigReferences = []models.TsConfigReferences{}
+
+	for _, pkg := range sublimeMetadata.Packages {
+		if pkg.Name != packageName {
+			sublimePackages = append(sublimePackages, pkg)
+		}
+	}
+
+	sublimeMetadata.Packages = sublimePackages
+
+	for _, cfg := range tsconfig.References {
+		if cfg.Name != packageName {
+			configReferences = append(configReferences, cfg)
+		}
+	}
+
+	tsconfig.References = configReferences
+
+	sublimeData, err := json.MarshalIndent(sublimeMetadata, "", " ")
+	if err != nil {
+		return errors.New(utils.MessageErrorIndentFile)
+	}
+
+	tsData, err := json.MarshalIndent(tsconfig, "", " ")
+	if err != nil {
+		return errors.New(utils.MessageErrorIndentFile)
+	}
+
+	err = os.WriteFile(sublimeFile, sublimeData, 0644)
+	if err != nil {
+		return errors.New(utils.MessageErrorWriteFile)
+	}
+
+	err = os.WriteFile(tsFile, tsData, 0644)
+	if err != nil {
+		return errors.New(utils.MessageErrorWriteFile)
 	}
 
 	return nil

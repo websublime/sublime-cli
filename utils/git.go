@@ -34,6 +34,14 @@ func InitGit(path string) (string, error) {
 	return strings.Replace(string(output), "\n", "", -1), err
 }
 
+func GetBranchList(path string) (string, error) {
+	gitCmd := exec.Command("git", "--no-pager", "diff", "--name-only", "main^..HEAD")
+	gitCmd.Dir = path
+	output, err := gitCmd.CombinedOutput()
+
+	return string(output), err
+}
+
 func GetLastCommit(path string) (string, error) {
 	gitCmd := exec.Command("git", "rev-parse", "head")
 	gitCmd.Dir = path

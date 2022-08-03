@@ -101,17 +101,20 @@ const (
 	ErrorInvalidCloudOperation ErrorType = "ECLOUD_OPERATION_INVALID"
 	ErrorInvalidaIndentation   ErrorType = "EINDENTATION_INVALID"
 	ErrorInvalidTypescript     ErrorType = "ETYPESCRIPT_INVALID"
+	ErrorInvalidEnvironment    ErrorType = "EENVIRONMENT_INVALID"
 
 	CommandRoot                      string = "sublime"
 	CommandFlagRoot                  string = "root"
 	CommandFlagConfig                string = "config"
 	CommandFlagWorkspaceOrganization string = "organization"
+	CommandFlagActionType            string = "type"
+	CommandFlagActionEnv             string = "env"
 
 	CommandRegister  string = "register"
 	CommandLogin     string = "login"
 	CommandWorkspace string = "workspace"
 	CommandCreate    string = "create"
-	CommandAction    string = "actio"
+	CommandAction    string = "action"
 
 	MessageCommandConfigUsage     string = "Config file (default is .sublime.json)."
 	MessageCommandRootUsage       string = "Project working dir, default to current dir."
@@ -212,4 +215,10 @@ const (
 
 	MessageErrorCommandCreateNamePrompt      string = "Name provided is not valid."
 	MessageErrorCommandCreateTemplateInvalid string = "Template type is invalid."
+
+	// Action command
+	MessageCommandActionShort string = "Github action command"
+	MessageCommandActionLong  string = "Action command is built to run on github workflows to create artifacts of the packages."
+
+	MessageErrorCommandActionEnv string = "Action command can only run on CI environments."
 )

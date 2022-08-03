@@ -10,20 +10,15 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "args": [
-                "--root", 
-                "/Users/miguelramos/Public/Projects/websublime-workspace/sublime-ui", 
+            "env": {
+                "CI": "true"
+            },
+            "args": [ 
                 "action", 
-                "--kind", 
+                "--type", 
                 "branch", 
-                "--bucket", 
-                "assets", 
-                "--url",
-                "websublime/flare",
-                "--key", 
-                "",
-                "--client",
-                "github"
+                "--env", 
+                "develop"
             ]
         },
         {
@@ -56,10 +51,6 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "env": {
-                "SUBLIME_API_URL": "https://debvasmsyxrewpmqckdv.supabase.co",
-                "SUBLIME_API_KEY": ""
-            },
             "args": [
                 "register"
             ]
@@ -70,10 +61,6 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}",
-            "env": {
-                "SUBLIME_API_URL": "https://debvasmsyxrewpmqckdv.supabase.co",
-                "SUBLIME_API_KEY": ""
-            },
             "args": [
                 "login",
                 "--email", 
