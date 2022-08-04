@@ -209,7 +209,7 @@ func (ctx *ActionFlags) DeployArtifacts() {
 				Esm:  fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Module)),
 			},
 			Styles: make([]string, 0),
-			Docs:   fmt.Sprintf("https://websublime.dev/organization/%s/%s", ctx.Sublime.Organization, pkg.Name),
+			Docs:   fmt.Sprintf("https://websublime.dev/organization/%s/%s/%s", ctx.Sublime.Organization, ctx.Sublime.Name, pkg.Name),
 		})
 
 		var manifestDestination = ""

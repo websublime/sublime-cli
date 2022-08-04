@@ -24,6 +24,7 @@ Sublime CLI is a tool to create a frontend workspace, libs or packages to distri
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Specs](https://github.com/websublime/sublime-cli/wiki/Specification)
 
 # Usage
 
@@ -119,7 +120,7 @@ Example of what runs on github action.
 
 | Parameter | Description |
 |---|---|
-| --type | Kind is: branch or tag making the diference for prod or dev |
+| --type | Type is: branch or tag making the diference for prod or dev |
 | --env | Environment in which you are right now (dev, prod) |
 
 # Important

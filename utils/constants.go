@@ -115,6 +115,7 @@ const (
 	CommandWorkspace string = "workspace"
 	CommandCreate    string = "create"
 	CommandAction    string = "action"
+	CommandStatus    string = "status"
 
 	MessageCommandConfigUsage     string = "Config file (default is .sublime.json)."
 	MessageCommandRootUsage       string = "Project working dir, default to current dir."
@@ -231,4 +232,7 @@ const (
 
 	MessageErrorCommandActionEnv       string = "Action command can only run on CI environments."
 	MessageErrorCommandActionNoCommits string = "No commits founded. Please commit first."
+
+	// Status command
+	MessageCommandStatusShort string = "Status about workspace"
 )
