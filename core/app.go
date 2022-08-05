@@ -71,23 +71,12 @@ func (ctx *App) InitAuthor() error {
 func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 	config := GetConfig()
 	rcFile := filepath.Join(config.HomeDir, ".sublime/rc.json")
-	rcJson, err := os.ReadFile(rcFile)
+	_, err := os.ReadFile(rcFile)
 	if err != nil {
-		return errors.New(utils.MessageErrorAuthorFileMissing)
+		utils.WarningOut(utils.MessageErrorAuthorFileMissing)
 	}
 
-	authorMetadata := models.AuthorFileProps{}
-
-	err = json.Unmarshal(rcJson, &authorMetadata)
-	if err != nil {
-		return errors.New(utils.MessageErrorParseFile)
-	}
-
-	authorMetadata.Token = author.Token
-	authorMetadata.Expire = author.Expire
-	authorMetadata.Refresh = author.Refresh
-
-	data, err := json.MarshalIndent(authorMetadata, "", " ")
+	data, err := json.MarshalIndent(author, "", " ")
 	if err != nil {
 		return errors.New(utils.MessageErrorIndentFile)
 	}

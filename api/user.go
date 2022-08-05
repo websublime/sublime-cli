@@ -19,32 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package models
+package api
 
-type AuthorFileProps struct {
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Token    string `json:"token"`
-	ID       string `json:"id"`
-	Expire   int64  `json:"expire"`
-	Refresh  string `json:"refresh"`
-}
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
-type User struct {
-	EmailConfirmedAt string `json:"email_confirmed_at"`
-	Phone            string `json:"phone"`
-	LastSignInAt     string `json:"last_sign_in_at"`
-	Identities       []struct {
-		ID     string `json:"id"`
-		UserID string `json:"user_id"`
-	} `json:"identities"`
-	ConfirmedAt  string `json:"confirmed_at"`
-	Email        string `json:"email"`
-	UserMetadata struct {
-		Author string `json:"author"`
-		Name   string `json:"name"`
-	} `json:"user_metadata"`
-	ID   string `json:"id"`
-	Role string `json:"role"`
+	"github.com/websublime/sublime-cli/models"
+)
+
+func (ctx *Supabase) GetUser(token string) (models.User, error) {
+	model := models.User{}
+
+	uri := fmt.Sprintf("%s/%s/user", ctx.BaseURL, AuthEndpoint)
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return model, err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return model, err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return model, err
+	}
+
+	if response.StatusCode >= 400 {
+		return model, errors.New(string(body))
+	}
+
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		return model, err
+	}
+
+	return model, err
 }

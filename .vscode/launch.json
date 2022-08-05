@@ -66,9 +66,9 @@
             "args": [
                 "login",
                 "--email", 
-                "miguel@websublime.dev",
+                "miguel.ramos@websublime.dev",
                 "--password",
-                "my_secret_password"
+                "secret_password"
             ]
         },
         {

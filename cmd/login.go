@@ -44,6 +44,12 @@ func init() {
 	loginFlags := &LoginFlags{}
 	loginCmd := NewLoginCmd(loginFlags)
 
+	//loginCmd.Flags().StringVar(&loginFlags.Email, "email", "", "Email")
+	//loginCmd.MarkFlagRequired("email")
+
+	//loginCmd.Flags().StringVar(&loginFlags.Password, "password", "", "Password")
+	//loginCmd.MarkFlagRequired("password")
+
 	rootCommand.AddCommand(loginCmd)
 }
 
@@ -109,11 +115,20 @@ func (ctx *LoginFlags) LoginAuthor() {
 
 	author.Expires = expires
 
+	user, err := supabase.GetUser(author.Token)
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidAuthor)
+	}
+
 	config.UpdateProgress(utils.MessageCommandLoginAuthor, 2)
 	err = app.UpdateAuthorMetadata(&models.AuthorFileProps{
-		Expire:  author.Expires,
-		Token:   author.Token,
-		Refresh: author.RefreshToken,
+		Expire:   author.Expires,
+		Token:    author.Token,
+		Refresh:  author.RefreshToken,
+		Name:     user.UserMetadata.Name,
+		Username: user.UserMetadata.Author,
+		Email:    user.Email,
+		ID:       user.ID,
 	})
 	if err != nil {
 		ctx.CommandError(err.Error(), utils.ErrorInvalidAuthor)

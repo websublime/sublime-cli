@@ -165,10 +165,19 @@ func executeTokenExpirationValidation() {
 
 			refresh.Expires = expires
 
+			user, err := supabase.GetUser(refresh.Token)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
+			}
+
 			err = app.UpdateAuthorMetadata(&models.AuthorFileProps{
-				Expire:  refresh.Expires,
-				Token:   refresh.Token,
-				Refresh: refresh.RefreshToken,
+				Expire:   refresh.Expires,
+				Token:    refresh.Token,
+				Refresh:  refresh.RefreshToken,
+				Name:     user.UserMetadata.Name,
+				Username: user.UserMetadata.Author,
+				Email:    user.Email,
+				ID:       user.ID,
 			})
 			if err != nil {
 				utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
