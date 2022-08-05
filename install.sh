@@ -323,10 +323,10 @@ echo "$PREFIX: found version ${VERSION} for ${OS}/${ARCH}"
 # The tarball path should include the version for v0.1.4+
 case "$VERSION" in
 0.0.[0-9]* | 0.1.[0-3])
-NAME=${BINARY}_${OS}_${ARCH}
+NAME=${BINARY}-v${VERSION}-${OS}-${ARCH}
 ;;
 *)
-NAME=${BINARY}_v${VERSION}_${OS}_${ARCH}
+NAME=${BINARY}-v${VERSION}-${OS}-${ARCH}
 ;;
 esac
 
