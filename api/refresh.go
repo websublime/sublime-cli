@@ -19,74 +19,58 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package utils
+package api
 
 import (
 	"bytes"
-	"html/template"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/websublime/sublime-cli/models"
 )
 
-type EmptyVars struct{}
+func (ctx *Supabase) RefreshToken(token string) (models.RefreshResponse, error) {
+	refresh := models.NewRefresh(token)
+	model := models.RefreshResponse{}
 
-type ArtifactsVars struct {
-	Version string
-}
-
-type PackageJsonVars struct {
-	Name      string
-	Namespace string
-	Repo      string
-	Username  string
-	Email     string
-	Version   string
-	Scope     string
-	Type      string
-}
-
-type ViteJsonVars struct {
-	Namespace string
-	Scope     string
-	Name      string
-}
-
-type SublimeJsonVars struct {
-	Name      string
-	Scope     string
-	Repo      string
-	Namespace string
-	Root      string
-}
-
-type ReleaseYamlVars struct {
-	Username string
-	Email    string
-	Scope    string
-}
-
-type ApiExtractorJsonVars struct {
-	Name string
-}
-
-type TsConfigJsonVars struct {
-	Namespace string
-	Vite      string
-}
-
-func process(t *template.Template, vars interface{}) string {
-	var tmplBytes bytes.Buffer
-
-	err := t.Execute(&tmplBytes, vars)
+	payload, err := json.Marshal(refresh)
 	if err != nil {
-		panic(err)
+		return model, err
 	}
-	return tmplBytes.String()
-}
 
-func ProcessString(str string, vars interface{}, delimLeft string, delimRight string) string {
-	tmpl, err := template.New("tmpl").Delims(delimLeft, delimRight).Parse(str)
+	uri := fmt.Sprintf("%s/%s/token?grant_type=refresh_token", ctx.BaseURL, AuthEndpoint)
 
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
 	if err != nil {
-		panic(err)
+		return model, err
 	}
-	return process(tmpl, vars)
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return model, err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return model, err
+	}
+
+	if response.StatusCode >= 400 {
+		return model, errors.New(string(body))
+	}
+
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		return model, err
+	}
+
+	return model, nil
 }

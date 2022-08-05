@@ -19,38 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package core
+package models
 
-import (
-	"os"
-	"path/filepath"
-
-	"github.com/websublime/sublime-cli/utils"
-)
-
-type ManifestScripts struct {
-	Main string `json:"main"`
-	Esm  string `json:"esm"`
+type Bucket struct {
+	ID        string `json:"id,omitempty"`
+	Name      string `json:"name"`
+	Public    bool   `json:"public"`
+	Owner     string `json:"owner,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+	UpdatedAt string `json:"updated_at,omitempty"`
 }
 
-type Manifest struct {
-	Name    string           `json:"name"`
-	Scope   string           `json:"scope"`
-	Repo    string           `json:"repo"`
-	Scripts *ManifestScripts `json:"scripts"`
-	Styles  []string         `json:"styles"`
-	Docs    string           `json:"docs"`
-	Version string           `json:"version"`
+type BucketUpload struct {
+	Key string `json:"key"`
 }
 
-func CreateManifest(template []byte, manifest Manifest) *os.File {
-	config := GetConfig()
-	manifestFile, err := os.Create(filepath.Join(config.RootDir, "manifest.json"))
-	if err != nil {
-		panic(err)
+func NewBucket(name string, id string, public bool) *Bucket {
+	return &Bucket{
+		Name:   name,
+		ID:     id,
+		Public: public,
 	}
-
-	manifestFile.WriteString(utils.ProcessString(string(template), &manifest, "{{", "}}"))
-
-	return manifestFile
 }

@@ -1,0 +1,9 @@
+{
+    "name": "{{ .Name }}",
+    "username": "{{ .Username }}",
+    "email": "{{ .Email }}",
+    "token": "{{ .Token }}",
+    "id": "{{ .ID }}",
+    "expires": "{{ .Expire }}",
+    "refresh": "{{ .Refresh }}"
+}

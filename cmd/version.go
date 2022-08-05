@@ -23,17 +23,18 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	Version   string = "v0.0.22"
-	BuildTime string = ""
+	Version   string = "v0.1.0"
+	BuildTime string = fmt.Sprintf("%d", time.Now().Unix())
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	rootCommand.AddCommand(versionCmd)
 }
 
 var versionCmd = &cobra.Command{

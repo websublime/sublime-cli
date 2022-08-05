@@ -19,10 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package clients
+package api
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,44 +34,60 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/gosimple/slug"
+	"github.com/websublime/sublime-cli/models"
 	"github.com/websublime/sublime-cli/utils"
 )
 
-const (
-	AuthEndpoint = "auth/v1"
-	RestEndpoint = "rest/v1"
-)
+func (ctx *Supabase) CreateWorkspaceBucket(name string, public bool) (models.Bucket, error) {
+	bucket := models.NewBucket(name, slug.Make(name), public)
+	model := models.Bucket{}
 
-type Supabase struct {
-	BaseURL     string
-	ApiKey      string
-	Environment string
-	HTTPClient  *http.Client
-}
-
-var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
-
-func escapeQuotes(s string) string {
-	return quoteEscaper.Replace(s)
-}
-
-func NewSupabase(baseURL string, supabaseKey string, env string) *Supabase {
-	return &Supabase{
-		BaseURL:     baseURL,
-		ApiKey:      supabaseKey,
-		Environment: env,
-		HTTPClient: &http.Client{
-			Timeout: time.Minute,
-		},
+	payload, err := json.Marshal(bucket)
+	if err != nil {
+		return model, err
 	}
+
+	uri := fmt.Sprintf("%s/%s/bucket", ctx.BaseURL, StorageEndpoint)
+
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return model, err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return model, err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return model, err
+	}
+
+	if response.StatusCode >= 400 {
+		return model, errors.New(string(body))
+	}
+
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		return model, err
+	}
+
+	return model, err
 }
 
-func (ctx *Supabase) Upload(bucket string, filePath string, destination string) string {
+func (ctx *Supabase) Upload(bucket string, filePath string, destination string) (models.BucketUpload, error) {
+	model := models.BucketUpload{}
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0755)
 	if err != nil {
-		panic(fmt.Errorf("os.Open: %v", err))
+		return model, err
 	}
 	defer file.Close()
 
@@ -78,7 +96,7 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 
 	stat, err := file.Stat()
 	if err != nil {
-		panic(fmt.Errorf("Couldn't get stat from file: %v", err))
+		return model, err
 	}
 
 	payload := new(bytes.Buffer)
@@ -92,20 +110,20 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 
 	formfile, err := writer.CreatePart(h)
 	if err != nil {
-		panic(fmt.Errorf("Couldn't create form for file: %v", err))
+		return model, err
 	}
 
 	_, err = io.Copy(formfile, file)
 	if err != nil {
-		panic(fmt.Errorf("Couldn't copy file to form: %v", err))
+		return model, err
 	}
 
 	writer.Close()
 
-	uri := fmt.Sprintf("%s/storage/v1/object/%s/%s/%s", ctx.BaseURL, bucket, destination, filepath.Base(file.Name()))
+	uri := fmt.Sprintf("%s/%s/object/%s/%s/%s", ctx.BaseURL, StorageEndpoint, bucket, destination, filepath.Base(file.Name()))
 
 	req, _ := http.NewRequest("POST", uri, payload)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
 	req.Header.Add("apikey", ctx.ApiKey)
 	req.Header.Add("x-upsert", "true")
 	req.Header.Add("Content-Type", writer.FormDataContentType())
@@ -114,15 +132,24 @@ func (ctx *Supabase) Upload(bucket string, filePath string, destination string) 
 	// https://gist.github.com/mattetti/5914158/f4d1393d83ebedc682a3c8e7bdc6b49670083b84
 	response, err := ctx.HTTPClient.Do(req)
 	if err != nil {
-		panic(fmt.Errorf("Couldn't upload file: %v", err))
+		return model, err
 	}
 
 	defer response.Body.Close()
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		panic(fmt.Errorf("Couldn't read body response: %v", err))
+		return model, err
 	}
 
-	return string(body)
+	if response.StatusCode >= 400 {
+		return model, errors.New(string(body))
+	}
+
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		return model, err
+	}
+
+	return model, nil
 }

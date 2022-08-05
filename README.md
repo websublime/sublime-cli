@@ -12,81 +12,112 @@
   <img style="display: inline; margin: 0 6px" alt="OSS" src="https://forthebadge.com/images/badges/open-source.svg">
 </p>
 
-<p align="center">❄️ SB-CLI</p>
+<p align="center">❄️ SB-CLI (WIP)</p>
 
-Sublime CLI is a tool to create a frontend workspace, libs or packages to distribute as npm or global scripts to use on your page or micro frontend architecture. It is based in vite to build your dists and also it create artifacts to publish on Supabase storage. Current we only support github actions.
+Sublime CLI is a tool to create a frontend workspace, libs or packages to distribute as npm or global scripts to use on your page or micro frontend architecture. It is based in vite to build your dists and also it create artifacts to publish on the Websublime cloud. Current we only support github actions. The monorepo is powered by TurboRepo.
+
+<p align="center">
+  <img style="display: inline; margin: 0 6px" alt="Sublime Diagram" src="https://user-images.githubusercontent.com/495720/181646023-0828bee5-0ed9-4938-b558-b3b6f723d135.jpeg">
+</p>
 
 # Table of contents
 
-- [Usage](#usage)
 - [Installation](#installation)
+- [Usage](#usage)
+- [Specs](https://github.com/websublime/sublime-cli/wiki/Specification)
+
+# Installation
+
+[(Back to top)](#table-of-contents)
+
+**Mandatory dependencies: NodeJS >= 16 and Yarn**
+
+The easiest way to get started is by copying and pasting the command below in your terminal:
+
+````
+curl -sf https://raw.githubusercontent.com/websublime/sublime-cli/main/install.sh | sh
+````
+
+Or
+
+Download the suitable binary for your OS from the list [here](https://github.com/websublime/sublime-cli/releases) and install it. Make sure to make executable with chmod +x.
+
+### Don't forget this step
+
+In your github repo you will need to setup the following secrets:
+
+| Parameter | Description |
+|---|---|
+| GH_TOKEN | Github token |
+
+This will be used on github actions to create npm deploys, artifacts uploads and releases.
+
+For OSX you will need to allow it to be executed, because it is not signed as a trusted/signed user.
 
 # Usage
 
 [(Back to top)](#table-of-contents)
 
 ```bash
-CLI tool to manage projects
+CLI tool to manage monorepo packages.
 
 Usage:
   sublime [flags]
   sublime [command]
 
 Available Commands:
-  action      Creates artifacts on github actions
-  create      Create libs or packages
+  action      Github action command
+  completion  Generate the autocompletion script for the specified shell
+  create      Create JS/TS packages
   help        Help about any command
+  login       Login author on sublime cloud platform.
+  register    Register author on sublime cloud platform.
+  status      Status about workspace
   version     Print the version number of sublime
-  workspace   Create a workspace project
+  workspace   Create a workspace.
 
 Flags:
-      --config string   config file (default is .sublime.json)
-  -h, --help            help for sublime-cli
-      --root string     Project working dir, default to current dir
+      --config string   Config file (default is .sublime.json).
+  -h, --help            help for sublime
+      --root string     Project working dir, default to current dir.
 
 Use "sublime [command] --help" for more information about a command.
 ```
+
+# Important
+
+After installation you will need to follow the next steps:
+
+- Run command to register on the platform: ```sublime register```
+- After registered please confirm your registration sent by email
+- Now go to websublime.dev login and create your organization. Your organization should correspond to the github organization name. (WIP)
+- With your organization created please login thru the cli to create your local identity file: ```sublime login```
+- Congrats! You are now able to start creating workspaces on your new organization.
 
 ## Create workspace
 
 First let's start to create a workspace monorepo. The creation of the workspace will need some parameters to fullfill package.json needs.
 
 ```bash
-> sublime workspace --name ws-libs-ui --scope @websublime --repo sublime/ws-libs-ui --username miguelramos --email miguel@websublime.dev
+> sublime workspace --organization websublime
 ```
 
-The scope should be the github organization name, because artifacts will be release to github and able to install it via npm.
+The organization should be the github organization name, because artifacts will be release to github and you be able to install it via npm.
+The CLI will prompt you with questions to be answer. All are mandatory.
 
-| Parameter | Description |
-|---|---|
-| --name | This will be the folder name for creating workspace |
-| --scope | This is the scope(organization) prefix namespace |
-| --repo | This is mandatory short github repo name |
-| --username | This will be used on package.json definitions |
-| --email | Same porpose as username |
-
-After the creation of your workspace just get into the workspace folder and run yarn.
-
-Now inside your workspace let's create a library or a package.
-
-- Library, could be something that you want to share thru your packages
-- Packages, independents lit components for your micro frontends
+After created, your workspace will be ready to create packages inside of it.
 
 ## Create package/lib
 
-Creating a library or package is on the same command, only parameter changes
+Creating a library or package. Monorepo has two folders where you can create your packages they are: libs and packages. Packages on libs are designed to be common features to other packages use. You will see that by default one lib is present. This lib is a vite plugin that provide automatic namespace resolution between packages/libs. The CLI will prompt you with questions to be answer. All are mandatory
 
 ```bash
-> sublime create --name utils --type lib --template lit
+> sublime create
 ```
 
-| Parameter | Description |
-|---|---|
-| --name | This will be the folder name for creating lib or pkg, also will be prepend with scope for packing name |
-| --type | Defines the type, supported are: lib or pkg |
-| --template | Template to use for your lib/pkg (lit, solid, vue, typescript) |
+Packages are created from templates. The templates current supported are: lit, solid, vue and typescript. Maybe in the future will be incremented.
 
-**Default template is: lit**
+**Default template is: typescript**
 
 Global parameters, can be used with any command before calling the command itself. There are two global parameters:
 
@@ -95,11 +126,15 @@ Global parameters, can be used with any command before calling the command itsel
 | --root | The root folder of your workspace |
 | --config | The .sublime.json config file |
 
-If you run the cli from inside your workspace folder this para meters are resolved.
+```bash
+> sublime --root ./sublime-ui create
+```
 
-## Perform github action
+If you run the cli from inside your workspace folder this parameters are resolved automatic.
 
-Two predefined actions were created when you created an workspace. This actions will trigger based on:
+## Github action
+
+Predefined actions were created when you created an workspace. This actions will trigger based on:
 - Branch name as: feat/...
 - Tag creation
 
@@ -109,45 +144,18 @@ The branch will create a snapshot artifact to be use for development needs. On t
 Example of what runs on github action.
 
 ```bash
-> sublime action --kind branch --bucket "$BUCKET" --url "$STORAGE_URL" --key "$STORAGE_KEY" --env "$NODE_ENV" --client github
+> sublime action --type branch --env "$NODE_ENV"
 ```
 
 | Parameter | Description |
 |---|---|
-| --kind | Kind is: branch or tag making the diference for prod or dev |
-| --bucket | Storage bucket name to put assets from dist |
-| --url | Storage base url |
-| --key | Storage api key |
+| --type | Type is: branch or tag making the diference for prod or dev |
 | --env | Environment in which you are right now (dev, prod) |
-| --client | Where to deploy the artifact (supabase storage or github) |
 
-When used as github you can consume the scripts via https://cdn.jsdelivr.net/gh/ORG/REPO/your-script. This will be show on action console.
+# Important
 
-# Installation
-
-[(Back to top)](#table-of-contents)
-
-**Mandatory dependencies: NodeJS >= 16 and Yarn**
-
-Download the suitable binary for your OS from the list [here](https://github.com/websublime/sublime-cli/releases) and install it. Make sure to make executable with chmod +x.
-
-In your github repo you will need to setup the following secrets:
-
-| Parameter | Description |
-|---|---|
-| GH_TOKEN | Github token |
-| BUCKET | Storage bucket name |
-| STORAGE_URL | Base Storage url |
-| STORAGE_KEY | Storage api secret key |
-
-This will be used on github actions to create npm deploys, artifacts uploads and releases.
-
-For OSX you will need to allow it to be executed, because it is not signed as a trusted/signed user.
-
-Also current all artifacts are upload to supabase storage, so you need to create two buckets there:
-
-- One will be used to deploy all dist assets on it
-- Second create a bucket with the name "manifests", where this will have info about wich package or lib you release from github actions. This manifest file can be used to serve the main scripts for your system.
+You can adjust your workflows if needeed but be aware that changing the predefined action where it runs sublime action command can break your deploysto the websublime cloud.
+Actions also are based on the package [changeset](https://github.com/changesets/changesets). They are already configured. Please follow the link to know more about it. All your branchs should follow that guideline to create awesome changelogs/issues and independent packages versions.
 
 # Contributing
 

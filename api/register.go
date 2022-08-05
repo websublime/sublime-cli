@@ -19,38 +19,58 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package core
+package api
 
 import (
-	"os"
-	"path/filepath"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
-	"github.com/websublime/sublime-cli/utils"
+	"github.com/websublime/sublime-cli/models"
 )
 
-type ManifestScripts struct {
-	Main string `json:"main"`
-	Esm  string `json:"esm"`
-}
+func (ctx *Supabase) RegisterAuthor(name string, username string, email string, password string) (models.SignResponse, error) {
+	signup := models.NewSignUp(email, password, name, username)
+	model := models.SignResponse{}
 
-type Manifest struct {
-	Name    string           `json:"name"`
-	Scope   string           `json:"scope"`
-	Repo    string           `json:"repo"`
-	Scripts *ManifestScripts `json:"scripts"`
-	Styles  []string         `json:"styles"`
-	Docs    string           `json:"docs"`
-	Version string           `json:"version"`
-}
-
-func CreateManifest(template []byte, manifest Manifest) *os.File {
-	config := GetConfig()
-	manifestFile, err := os.Create(filepath.Join(config.RootDir, "manifest.json"))
+	payload, err := json.Marshal(signup)
 	if err != nil {
-		panic(err)
+		return model, err
 	}
 
-	manifestFile.WriteString(utils.ProcessString(string(template), &manifest, "{{", "}}"))
+	uri := fmt.Sprintf("%s/%s/signup", ctx.BaseURL, AuthEndpoint)
 
-	return manifestFile
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(payload))
+	if err != nil {
+		return model, err
+	}
+	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", ctx.ApiToken))
+	req.Header.Add("apikey", ctx.ApiKey)
+
+	response, err := ctx.HTTPClient.Do(req)
+	if err != nil {
+		return model, err
+	}
+
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return model, err
+	}
+
+	if response.StatusCode >= 400 {
+		return model, errors.New(string(body))
+	}
+
+	err = json.Unmarshal(body, &model)
+	if err != nil {
+		return model, err
+	}
+
+	return model, nil
 }

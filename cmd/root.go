@@ -22,28 +22,36 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/json"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/websublime/sublime-cli/api"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/models"
+	"github.com/websublime/sublime-cli/utils"
 )
 
-type RootCommand struct {
-	ConfigFile string
-	Root       string
+type RootFlags struct {
+	ConfigFile string `json:"config_file"`
+	Root       string `json:"root"`
 }
 
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = NewRootCmd()
+var rootCommand = NewRootCommand()
 
-func NewRootCmd() *cobra.Command {
+func NewRootCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "sublime",
-		Short: "CLI tool to manage FE packages",
+		Use:   utils.CommandRoot,
+		Short: utils.MessageCommandRootShort,
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
 				cmd.Help()
@@ -52,66 +60,131 @@ func NewRootCmd() *cobra.Command {
 	}
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
+	if err := rootCommand.Execute(); err != nil {
+		utils.ErrorOut(utils.MessageErrorCommandExecution, utils.ErrorCmdExecution)
 	}
 }
 
 func init() {
-	rootCommand := &RootCommand{}
+	rootFlags := &RootFlags{}
 
 	cobra.OnInitialize(func() {
-		initConfig(rootCommand)
+		banner()
+		executeAuthorValidation()
+		executeTokenExpirationValidation()
+		initializeCommand(rootFlags)
 	})
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&rootCommand.ConfigFile, "config", "", "config file (default is .sublime.json)")
-	rootCmd.PersistentFlags().StringVar(&rootCommand.Root, "root", "", "Project working dir, default to current dir")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCommand.PersistentFlags().StringVar(&rootFlags.ConfigFile, utils.CommandFlagConfig, "", utils.MessageCommandConfigUsage)
+	rootCommand.PersistentFlags().StringVar(&rootFlags.Root, utils.CommandFlagRoot, "", utils.MessageCommandRootUsage)
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig(rootCommand *RootCommand) {
-	sublime := core.GetSublime()
+func banner() {
+	banner := `
+	
+███████╗██╗   ██╗██████╗ ██╗     ██╗███╗   ███╗███████╗     ██████╗██╗     ██╗
+██╔════╝██║   ██║██╔══██╗██║     ██║████╗ ████║██╔════╝    ██╔════╝██║     ██║
+███████╗██║   ██║██████╔╝██║     ██║██╔████╔██║█████╗      ██║     ██║     ██║
+╚════██║██║   ██║██╔══██╗██║     ██║██║╚██╔╝██║██╔══╝      ██║     ██║     ██║
+███████║╚██████╔╝██████╔╝███████╗██║██║ ╚═╝ ██║███████╗    ╚██████╗███████╗██║
+╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝╚══════╝╚═╝
+                                                                              
 
-	if rootCommand.Root != "" {
-		sublime.SetRoot(rootCommand.Root)
+|-----------------------------------------------------------------------------|	
+`
+	color.Green.Println(banner)
+	color.Blue.Println(fmt.Sprintf("Version: %s", Version))
+}
+
+func initializeCommand(rootFlags *RootFlags) {
+	config := core.GetConfig()
+
+	if rootFlags.Root != "" {
+		config.SetRootDir(rootFlags.Root)
 	}
 
-	if rootCommand.ConfigFile != "" {
-		viper.SetConfigFile(rootCommand.ConfigFile)
+	if rootFlags.ConfigFile != "" {
+		viper.SetConfigFile(rootFlags.ConfigFile)
 	} else {
-		// Search config in home directory with name ".sublime" (without extension).
-		viper.AddConfigPath(sublime.Root)
+		viper.AddConfigPath(config.RootDir)
 		viper.SetConfigType("json")
 		viper.SetConfigName(".sublime")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	viper.AutomaticEnv()
 
-	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		configFile := viper.ConfigFileUsed()
 
-		if !filepath.IsAbs(configFile) {
-			configFile = filepath.Join(sublime.Root, configFile)
+		config.SetRootDir(filepath.Dir(configFile))
+	}
+}
+
+func executeAuthorValidation() {
+	flags := os.Args[1:]
+
+	if !isCommandExclude(flags) {
+		app := core.GetApp()
+
+		err := app.InitAuthor()
+		if err != nil {
+			utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
 		}
 
-		data, _ := os.ReadFile(configFile)
-		json.Unmarshal(data, &sublime)
+		if app.Author.Token == "" {
+			utils.ErrorOut(utils.MessageErrorAuthorTokenMissing, utils.ErrorInvalidAuthor)
+		}
+	}
+}
 
-		sublime.Root = filepath.Dir(configFile)
+func executeTokenExpirationValidation() {
+	flags := os.Args[1:]
 
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	if !isCommandExclude(flags) {
+		app := core.GetApp()
+
+		now := time.Now()
+		expiration := time.Unix(app.Author.Expire, 0)
+
+		if now.After(expiration) {
+			utils.InfoOut(utils.MessageCommandRootTokenExpire)
+
+			supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, utils.ApiKey, "production")
+			refresh, err := supabase.RefreshToken(app.Author.Refresh)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidToken)
+			}
+
+			tokenStrings := strings.Split(refresh.Token, ".")
+			claimString, _ := base64.StdEncoding.DecodeString(tokenStrings[1])
+			regex := regexp.MustCompile(`(?m)(exp*.":)(\d*)`)
+
+			parts := regex.FindStringSubmatch(string(claimString))
+			expires, _ := strconv.ParseInt(parts[2], 10, 64)
+
+			refresh.Expires = expires
+
+			err = app.UpdateAuthorMetadata(&models.AuthorFileProps{
+				Expire:  refresh.Expires,
+				Token:   refresh.Token,
+				Refresh: refresh.RefreshToken,
+			})
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidAuthor)
+			}
+		}
+	}
+}
+
+func isCommandExclude(flags []string) bool {
+	if len(flags) == 0 {
+		return true
+	}
+
+	if utils.Contains(flags, "action") || utils.Contains(flags, "login") || utils.Contains(flags, "register") {
+		return true
+	} else {
+		return false
 	}
 }

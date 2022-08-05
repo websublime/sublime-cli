@@ -19,38 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package core
+package models
 
-import (
-	"os"
-	"path/filepath"
-
-	"github.com/websublime/sublime-cli/utils"
-)
-
-type ManifestScripts struct {
-	Main string `json:"main"`
-	Esm  string `json:"esm"`
+type Login struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-type Manifest struct {
-	Name    string           `json:"name"`
-	Scope   string           `json:"scope"`
-	Repo    string           `json:"repo"`
-	Scripts *ManifestScripts `json:"scripts"`
-	Styles  []string         `json:"styles"`
-	Docs    string           `json:"docs"`
-	Version string           `json:"version"`
+type LoginResponse struct {
+	Token        string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	Expires      int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	CreatedAt    string `json:"created_at"`
 }
 
-func CreateManifest(template []byte, manifest Manifest) *os.File {
-	config := GetConfig()
-	manifestFile, err := os.Create(filepath.Join(config.RootDir, "manifest.json"))
-	if err != nil {
-		panic(err)
+func NewLogin(email string, password string) *Login {
+	return &Login{
+		Email:    email,
+		Password: password,
 	}
-
-	manifestFile.WriteString(utils.ProcessString(string(template), &manifest, "{{", "}}"))
-
-	return manifestFile
 }

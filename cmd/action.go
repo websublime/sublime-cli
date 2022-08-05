@@ -29,205 +29,242 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gookit/color"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/websublime/sublime-cli/api"
 	"github.com/websublime/sublime-cli/core"
-	"github.com/websublime/sublime-cli/core/clients"
+	"github.com/websublime/sublime-cli/models"
 	"github.com/websublime/sublime-cli/utils"
 )
 
-type ActionCommand struct {
-	Kind        string
-	Client      string
-	Bucket      string
-	Key         string
-	BaseUrl     string
-	Environment string
+type ActionFlags struct {
+	Type        string                   `json:"type"`
+	Environment string                   `json:"environment"`
+	Sublime     models.SublimeViperProps `json:"-"`
+	Packages    []models.SublimePackages `json:"-"`
 }
 
 func init() {
-	cmd := &ActionCommand{}
-
-	actionCmd := NewActionCmd(cmd)
-	rootCmd.AddCommand(actionCmd)
-
-	actionCmd.Flags().StringVar(&cmd.Kind, "kind", "branch", "Kind of action (branch or tag)")
-	actionCmd.Flags().StringVar(&cmd.Environment, "env", "develop", "Environment")
-
-	actionCmd.Flags().StringVar(&cmd.Client, "client", "", "Client to use to upload to storage (supabase, github) [REQUIRED]")
-	actionCmd.MarkFlagRequired("client")
-
-	actionCmd.Flags().StringVar(&cmd.Bucket, "bucket", "", "Bucket storage name [REQUIRED]")
-	actionCmd.MarkFlagRequired("bucket")
-
-	actionCmd.Flags().StringVar(&cmd.Key, "key", "", "Api key [REQUIRED]")
-	actionCmd.MarkFlagRequired("key")
-
-	actionCmd.Flags().StringVar(&cmd.BaseUrl, "url", "", "Api base url [REQUIRED]")
-	actionCmd.MarkFlagRequired("url")
-}
-
-func getSublimeBranchPackages(commitsCount int64) []core.Packages {
-	sublime := core.GetSublime()
-	pkgs := []core.Packages{}
-
-	for key := range sublime.Packages {
-		pkgName := sublime.Packages[key].Name
-		var output string = ""
-
-		if commitsCount >= 2 {
-			output, _ = utils.GetBeforeAndLastDiff(sublime.Root)
-		} else if commitsCount == 1 {
-			output, _ = utils.GetBeforeDiff(sublime.Root)
-		}
-
-		founded := strings.Contains(output, pkgName)
-
-		if founded {
-			pkgs = append(pkgs, sublime.Packages[key])
-		}
+	actionFlags := &ActionFlags{
+		Sublime:  models.SublimeViperProps{},
+		Packages: []models.SublimePackages{},
 	}
+	actionCmd := NewActionCmd(actionFlags)
 
-	return pkgs
+	rootCommand.AddCommand(actionCmd)
+
+	actionCmd.Flags().StringVar(&actionFlags.Type, utils.CommandFlagActionType, "branch", "Type of action (branch or tag)")
+	actionCmd.Flags().StringVar(&actionFlags.Environment, utils.CommandFlagActionEnv, "develop", "Environment")
 }
 
-func getSublimeTagPackages() []core.Packages {
-	sublime := core.GetSublime()
-	pkgs := []core.Packages{}
-
-	for key := range sublime.Packages {
-		pkgs = append(pkgs, sublime.Packages[key])
-	}
-
-	return pkgs
-}
-
-func NewActionCmd(cmdAction *ActionCommand) *cobra.Command {
+func NewActionCmd(cmdAction *ActionFlags) *cobra.Command {
 	return &cobra.Command{
-		Use:   "action",
-		Short: "Create artifacts on github actions",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmdAction.ReleaseArtifact(cmd)
+		Use:   utils.CommandAction,
+		Short: utils.MessageCommandActionShort,
+		Long:  utils.MessageCommandActionLong,
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			isCiEnv := viper.GetBool("CI")
+
+			err := viper.Unmarshal(&cmdAction.Sublime)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidEnvironment)
+			}
+
+			if !isCiEnv {
+				utils.ErrorOut(utils.MessageErrorCommandActionEnv, utils.ErrorInvalidEnvironment)
+			}
+		},
+		Run: func(cmd *cobra.Command, _ []string) {
+			cmdAction.Run(cmd)
 		},
 	}
 }
 
-func (ctx *ActionCommand) ReleaseArtifact(cmd *cobra.Command) {
-	color.Info.Println("🥼 Starting Feature Artifacts creation")
-	sublime := core.GetSublime()
+func getBranchDiffPackages(dir string, pkgs []models.SublimePackages) []models.SublimePackages {
+	packages := []models.SublimePackages{}
 
-	var pkgs = []core.Packages{}
+	changedList, err := utils.GetBranchList(dir)
+	if err != nil {
+		utils.WarningOut(err.Error())
+		os.Exit(0)
+	}
+	list := strings.Fields(changedList)
 
-	count, _ := utils.GetCommitsCount(sublime.Root)
+	for _, pkg := range pkgs {
+		// founded := strings.Contains(changedList, pkg.Name)
+		founded := utils.Present(list, pkg.Name)
+
+		if founded {
+			packages = append(packages, pkg)
+		}
+	}
+
+	return packages
+}
+
+func (ctx *ActionFlags) Run(cmd *cobra.Command) {
+	config := core.GetConfig()
+
+	types := utils.GitType(ctx.Type)
+	count, err := utils.GetCommitsCount(config.RootDir)
 	counter, err := strconv.ParseInt(count, 10, 0)
 	if err != nil || counter <= 0 {
-		cobra.CheckErr("No commits founded. Please commit first")
+		utils.WarningOut(utils.MessageErrorCommandActionNoCommits)
+		os.Exit(0)
 	}
 
-	color.Info.Println("🥼 Commits counted: ", counter)
+	switch types {
+	case utils.Branch:
+		ctx.Packages = getBranchDiffPackages(config.RootDir, ctx.Sublime.Packages)
 
-	var supabase *clients.Supabase
-	var github *clients.Github
-	if ctx.Client == "supabase" {
-		supabase = clients.NewSupabase(ctx.BaseUrl, ctx.Key, ctx.Environment)
-	} else if ctx.Client == "github" {
-		github = clients.NewGithub(fmt.Sprintf("https://api.github.com/repos/%s/contents", ctx.BaseUrl), ctx.Key, ctx.Environment)
-	}
-
-	if ctx.Kind == "branch" {
-		pkgs = getSublimeBranchPackages(counter)
-	} else {
-		pkgs = getSublimeTagPackages()
-	}
-
-	if len(pkgs) <= 0 {
-		color.Info.Println("🥼 No packages founded to build artifacts")
-	} else {
-		color.Info.Println("🥼 Founded", len(pkgs), "package to build artifacts")
-	}
-
-	for key := range pkgs {
-		var libDir string
-		if pkgs[key].Type == "lib" {
-			libDir = "libs"
+		if len(ctx.Packages) <= 0 {
+			utils.WarningOut(utils.MessageCommandActionNoPackages)
+			os.Exit(0)
+		} else {
+			utils.SuccessOut(fmt.Sprintf(utils.MessageCommandActionFoundPackages, len(ctx.Packages)))
 		}
 
-		if pkgs[key].Type == "pkg" {
+		ctx.DeployArtifacts()
+	case utils.Tag:
+		ctx.Packages = ctx.Sublime.Packages
+
+		if len(ctx.Packages) <= 0 {
+			utils.WarningOut(utils.MessageCommandActionNoPackages)
+			os.Exit(0)
+		} else {
+			utils.SuccessOut(fmt.Sprintf(utils.MessageCommandActionFoundPackages, len(ctx.Packages)))
+		}
+
+		ctx.DeployArtifacts()
+		ctx.UpdatePackageVersion()
+	default:
+		utils.WarningOut(utils.MessageCommandActionTypeUnknown)
+		os.Exit(0)
+	}
+}
+
+func (ctx *ActionFlags) DeployArtifacts() {
+	config := core.GetConfig()
+	env := utils.EnvType(ctx.Environment)
+	supabase := api.NewSupabase(utils.ApiUrl, utils.ApiSecret, utils.ApiSecret, string(env))
+	scope := fmt.Sprintf("@%s", ctx.Sublime.Organization)
+	isBranch := utils.GitType(ctx.Type) == utils.Branch
+
+	for _, pkg := range ctx.Packages {
+		var libDir string = "libs"
+		isPackage := pkg.Type == utils.Package
+
+		if isPackage {
 			libDir = "packages"
 		}
 
-		libFolder := filepath.Join(sublime.Root, libDir, pkgs[key].Name)
-		distFolder := filepath.Join(libFolder, "dist")
+		packageDir := filepath.Join(config.RootDir, libDir, pkg.Name)
+		packageDistDir := filepath.Join(packageDir, "dist")
 
-		pkgJson := &utils.PackageJson{}
-		data, _ := os.ReadFile(filepath.Join(libFolder, "package.json"))
-		json.Unmarshal(data, &pkgJson)
+		packageJson := models.PackageJson{}
+		data, err := os.ReadFile(filepath.Join(packageDir, "package.json"))
+		if err != nil {
+			utils.WarningOut(utils.MessageErrorReadFile)
+			os.Exit(0)
+		}
 
-		color.Info.Println("🥼 Starting creating artifact for:", pkgJson.Name)
+		err = json.Unmarshal(data, &packageJson)
+		if err != nil {
+			utils.WarningOut(utils.MessageErrorParseFile)
+			os.Exit(0)
+		}
 
 		var destinationFolder = ""
-		if ctx.Kind == "branch" {
-			destinationFolder = fmt.Sprintf("%s@%s-SNAPSHOT", pkgs[key].Name, pkgJson.Version)
+		if isBranch {
+			destinationFolder = fmt.Sprintf("%s@%s-SNAPSHOT", pkg.Name, packageJson.Version)
 		} else {
-			destinationFolder = fmt.Sprintf("%s@%s", pkgs[key].Name, pkgJson.Version)
+			destinationFolder = fmt.Sprintf("%s@%s", pkg.Name, packageJson.Version)
 		}
 
-		fileList, err := utils.PathWalk(distFolder)
+		distFiles, err := utils.PathWalk(packageDistDir)
 		if err != nil {
-			panic(err)
+			utils.WarningOut(err.Error())
+			os.Exit(0)
 		}
 
-		color.Info.Println("🥼 Founded", len(fileList), "files to be upload to assets bucket")
-
-		for idx := range fileList {
-			if ctx.Client == "supabase" {
-				supabase.Upload(ctx.Bucket, fileList[idx], destinationFolder)
-			} else if ctx.Client == "github" {
-				github.Upload("assets", fileList[idx], destinationFolder)
+		for _, file := range distFiles {
+			upload, err := supabase.Upload(ctx.Sublime.Organization, file, destinationFolder)
+			if err != nil {
+				utils.WarningOut(err.Error())
+				os.Exit(0)
 			}
+
+			utils.InfoOut(fmt.Sprintf(utils.MessageCommandActionUploadFile, ctx.Sublime.Organization, upload.Key))
 		}
 
-		color.Info.Println("🥼 Files uploaded to bucket. Starting manifest creation")
-
-		var manifestBaseLink = ""
-		if ctx.Client == "supabase" {
-			manifestBaseLink = fmt.Sprintf("%s/storage/v1/object/public/%s/%s", ctx.BaseUrl, ctx.Bucket, destinationFolder)
-		} else if ctx.Client == "github" {
-			manifestBaseLink = fmt.Sprintf("https://cdn.jsdelivr.net/gh/%s/%s/%s", ctx.BaseUrl, "assets", destinationFolder)
-		}
-
+		manifestBaseLink := fmt.Sprintf("%s/%s/object/public/%s/%s", utils.ApiUrl, api.StorageEndpoint, ctx.Sublime.Organization, destinationFolder)
 		manifestJson, _ := FileTemplates.ReadFile("templates/manifest.json")
 		manifestFile := core.CreateManifest(manifestJson, core.Manifest{
-			Name:    pkgs[key].Name,
-			Scope:   sublime.Scope,
-			Repo:    sublime.Repo,
-			Version: pkgJson.Version,
+			Name:    pkg.Name,
+			Scope:   scope,
+			Repo:    ctx.Sublime.Repo,
+			Version: packageJson.Version,
 			Scripts: &core.ManifestScripts{
-				Main: fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(pkgJson.Main)),
-				Esm:  fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(pkgJson.Module)),
+				Main: fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Main)),
+				Esm:  fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Module)),
 			},
 			Styles: make([]string, 0),
-			Docs:   "",
+			Docs:   fmt.Sprintf("https://websublime.dev/organization/%s/%s/%s", ctx.Sublime.Organization, ctx.Sublime.Name, pkg.Name),
 		})
 
 		var manifestDestination = ""
-		if ctx.Kind == "branch" {
-			manifestDestination = fmt.Sprintf("%s/%s", pkgJson.Name, ctx.Environment)
+		if isBranch {
+			manifestDestination = fmt.Sprintf("manifests/%s/%s", packageJson.Name, string(env))
 		} else {
-			manifestDestination = pkgJson.Name
+			manifestDestination = packageJson.Name
 		}
 
-		var manifestLink = ""
-		if ctx.Client == "supabase" {
-			supabase.Upload("manifests", manifestFile.Name(), manifestDestination)
-			manifestLink = fmt.Sprintf("%s/storage/v1/object/public/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
-		} else if ctx.Client == "github" {
-			github.Upload("manifests", manifestFile.Name(), manifestDestination)
-			manifestLink = fmt.Sprintf("https://cdn.jsdelivr.net/gh/%s/%s/%s/%s", ctx.BaseUrl, "manifests", manifestDestination, filepath.Base(manifestFile.Name()))
+		manifest, err := supabase.Upload(ctx.Sublime.Organization, manifestFile.Name(), manifestDestination)
+		if err != nil {
+			utils.WarningOut(err.Error())
+			os.Exit(0)
 		}
+
+		utils.InfoOut(fmt.Sprintf(utils.MessageCommandActionUploadFile, ctx.Sublime.Organization, manifest.Key))
 
 		os.Remove(manifestFile.Name())
 
-		color.Info.Println("🥼 Manifest uploaded to:", manifestLink)
+		utils.SuccessOut(utils.MessageCommandActionArtifact)
+	}
+}
+
+func (ctx *ActionFlags) UpdatePackageVersion() {
+	config := core.GetConfig()
+	supabase := api.NewSupabase(utils.ApiUrl, utils.ApiSecret, utils.ApiSecret, "production")
+
+	for _, pkg := range ctx.Packages {
+		var libDir string = "libs"
+		isPackage := pkg.Type == utils.Package
+
+		if isPackage {
+			libDir = "packages"
+		}
+
+		packageDir := filepath.Join(config.RootDir, libDir, pkg.Name)
+
+		packageJson := models.PackageJson{}
+		data, err := os.ReadFile(filepath.Join(packageDir, "package.json"))
+		if err != nil {
+			utils.WarningOut(utils.MessageErrorReadFile)
+			os.Exit(0)
+		}
+
+		err = json.Unmarshal(data, &packageJson)
+		if err != nil {
+			utils.WarningOut(utils.MessageErrorParseFile)
+			os.Exit(0)
+		}
+
+		_, err = supabase.UpdateWorkspacePackageVersion(pkg.ID, packageJson.Version)
+		if err != nil {
+			utils.WarningOut(err.Error())
+		}
+
+		utils.SuccessOut(fmt.Sprintf(utils.MessageCommandActionVersionUpdate, pkg.Name, packageJson.Version))
 	}
 }

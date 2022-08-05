@@ -22,27 +22,19 @@ THE SOFTWARE.
 package utils
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gookit/color"
+	"github.com/spf13/cobra"
 )
 
-type PackageJson struct {
-	Name            string            `json:"name"`
-	Version         string            `json:"version"`
-	Description     string            `json:"description"`
-	Main            string            `json:"main"`
-	Typings         string            `json:"typings"`
-	Module          string            `json:"module"`
-	Scripts         map[string]string `json:"scripts"`
-	Keywords        []string          `json:"keywords"`
-	Author          string            `json:"author"`
-	License         string            `json:"license"`
-	Dependencies    map[string]string `json:"dependencies"`
-	DevDependencies map[string]string `json:"devDependencies"`
-}
-
+// Walk recursive a directory
 func PathWalk(root string) ([]string, error) {
 	var files []string
 
@@ -62,6 +54,7 @@ func PathWalk(root string) ([]string, error) {
 	return files, nil
 }
 
+// Get mime type extension for files
 func GetMimeType(extension string) string {
 	mimes := map[string]string{
 		"none":    "application/octet-stream",
@@ -239,4 +232,62 @@ func GetMimeType(extension string) string {
 	}
 
 	return fmt.Sprintf("%s; charset=utf-8", mimetype)
+}
+
+// Check if string exists on a slice of strings
+func Contains(args []string, lookup string) bool {
+	for _, value := range args {
+		if value == lookup {
+			return true
+		}
+	}
+
+	return false
+}
+
+func Present(args []string, lookup string) bool {
+	for _, value := range args {
+		if strings.Contains(value, lookup) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Prints error and exit application
+func ErrorOut(message string, code ErrorType) {
+	color.Red.Println(message)
+	cobra.CheckErr(errors.New(fmt.Sprintf("🚨 TYPE: %s", code)))
+}
+
+func InfoOut(message string) {
+	color.Blue.Println(fmt.Sprintf("🚦 %s", message))
+}
+
+func SuccessOut(message string) {
+	color.Green.Println(fmt.Sprintf("⭐️ %s", message))
+}
+
+func WarningOut(message string) {
+	color.Yellow.Println(fmt.Sprintf("🌨 %s", message))
+}
+
+func process(t *template.Template, vars interface{}) string {
+	var tmplBytes bytes.Buffer
+
+	err := t.Execute(&tmplBytes, vars)
+	if err != nil {
+		panic(err)
+	}
+	return tmplBytes.String()
+}
+
+func ProcessString(str string, vars interface{}, delimLeft string, delimRight string) string {
+	tmpl, err := template.New("tmpl").Delims(delimLeft, delimRight).Parse(str)
+
+	if err != nil {
+		panic(err)
+	}
+	return process(tmpl, vars)
 }

@@ -19,38 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package core
+package api
 
 import (
-	"os"
-	"path/filepath"
-
-	"github.com/websublime/sublime-cli/utils"
+	"net/http"
+	"strings"
+	"time"
 )
 
-type ManifestScripts struct {
-	Main string `json:"main"`
-	Esm  string `json:"esm"`
+const (
+	AuthEndpoint    = "auth/v1"
+	RestEndpoint    = "rest/v1"
+	StorageEndpoint = "storage/v1"
+)
+
+type Supabase struct {
+	BaseURL     string
+	ApiKey      string
+	ApiToken    string
+	Environment string
+	HTTPClient  *http.Client
 }
 
-type Manifest struct {
-	Name    string           `json:"name"`
-	Scope   string           `json:"scope"`
-	Repo    string           `json:"repo"`
-	Scripts *ManifestScripts `json:"scripts"`
-	Styles  []string         `json:"styles"`
-	Docs    string           `json:"docs"`
-	Version string           `json:"version"`
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
 }
 
-func CreateManifest(template []byte, manifest Manifest) *os.File {
-	config := GetConfig()
-	manifestFile, err := os.Create(filepath.Join(config.RootDir, "manifest.json"))
-	if err != nil {
-		panic(err)
+func NewSupabase(baseURL string, supabaseKey string, supabaseToken string, env string) *Supabase {
+	return &Supabase{
+		BaseURL:     baseURL,
+		ApiKey:      supabaseKey,
+		ApiToken:    supabaseToken,
+		Environment: env,
+		HTTPClient: &http.Client{
+			Timeout: time.Minute,
+		},
 	}
-
-	manifestFile.WriteString(utils.ProcessString(string(template), &manifest, "{{", "}}"))
-
-	return manifestFile
 }

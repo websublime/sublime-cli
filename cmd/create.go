@@ -23,210 +23,405 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/gookit/color"
 	"github.com/gosimple/slug"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/websublime/sublime-cli/api"
 	"github.com/websublime/sublime-cli/core"
+	"github.com/websublime/sublime-cli/models"
 	"github.com/websublime/sublime-cli/utils"
 )
 
-type CreateCommand struct {
-	Name      string
-	Type      string
-	Template  string
-	Templates []LibTemplate
-}
-
-type LibTemplate struct {
-	Type string
-	Link string
+type CreateFlags struct {
+	Name        string                   `json:"name"`
+	Type        utils.PackageType        `json:"type"`
+	Template    utils.TemplateType       `json:"template"`
+	Description string                   `json:"description"`
+	Sublime     models.SublimeViperProps `json:"-"`
+	PackageDir  string                   `json:"-"`
+	LibTypeDir  string                   `json:"-"`
 }
 
 func init() {
-	templates := []LibTemplate{
-		{
-			Type: "vue",
-			Link: "git@github.com:websublime/sublime-vue-template.git",
-		},
-		{
-			Type: "lit",
-			Link: "git@github.com:websublime/sublime-lit-template.git",
-		},
-		{
-			Type: "solid",
-			Link: "git@github.com:websublime/sublime-solid-template.git",
-		},
-		{
-			Type: "typescript",
-			Link: "git@github.com:websublime/sublime-typescript-template.git",
-		},
+	createFlags := &CreateFlags{
+		Sublime: models.SublimeViperProps{},
 	}
+	createCmd := NewCreateCmd(createFlags)
 
-	cmd := &CreateCommand{
-		Templates: templates,
-	}
-	createCmd := NewCreateCmd(cmd)
-	rootCmd.AddCommand(createCmd)
-
-	createCmd.Flags().StringVar(&cmd.Name, "name", "", "Lib or package name [REQUIRED]")
-	createCmd.MarkFlagRequired("name")
-
-	createCmd.Flags().StringVar(&cmd.Type, "type", "", "Type of package (lib or pkg) [REQUIRED]")
-	createCmd.MarkFlagRequired("name")
-
-	createCmd.Flags().StringVar(&cmd.Template, "template", "lit", "Kind of template: (lit, solid, vue, typescript)")
-	createCmd.MarkFlagRequired("template")
+	rootCommand.AddCommand(createCmd)
 }
 
-func NewCreateCmd(cmdCreate *CreateCommand) *cobra.Command {
+func NewCreateCmd(cmdCreate *CreateFlags) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create",
-		Short: "Create libs or packages from lit, solid, vue or typescript",
-		Run: func(cmd *cobra.Command, args []string) {
-			cmdCreate.CreatPackage((cmd))
+		Use:   utils.CommandCreate,
+		Short: utils.MessageCommandCreateShort,
+		Long:  utils.MessageCommandCreateLong,
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			app := core.GetApp()
+
+			err := viper.Unmarshal(&cmdCreate.Sublime)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidWorkspace)
+			}
+
+			supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, app.Author.Token, "production")
+			isUserOrganization, err := supabase.ValidateUserOrganization(app.Author.ID, cmdCreate.Sublime.Organization)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidOrganization)
+			}
+
+			if !isUserOrganization {
+				utils.ErrorOut(utils.MessageErrorCommandWorkspaceInvalidOrganization, utils.ErrorInvalidOrganization)
+			}
+
+			isWorkspaceOrganization, err := supabase.ValidateWorkspaceOrganization(cmdCreate.Sublime.ID, app.OrganizationID)
+			if err != nil {
+				utils.ErrorOut(err.Error(), utils.ErrorInvalidOrganization)
+			}
+
+			if !isWorkspaceOrganization {
+				utils.ErrorOut(utils.MessageErrorCommandWorkspaceInvalidOrganization, utils.ErrorInvalidWorkspace)
+			}
+		},
+		Run: func(cmd *cobra.Command, _ []string) {
+			cmdCreate.Run(cmd)
+			cmdCreate.CreatePackage()
+			cmdCreate.UpdateRepoFiles()
 			cmdCreate.YarnLink()
+			cmdCreate.CreateCloudPackage()
 		},
 	}
 }
 
-func (ctx *CreateCommand) CreatPackage(cmd *cobra.Command) {
-	sublime := core.GetSublime()
-	var libType = "libs"
-
-	if ctx.Type == "pkg" {
-		libType = "packages"
+func (ctx *CreateFlags) Run(cmd *cobra.Command) {
+	nameContent := models.PromptContent{
+		Error: utils.MessageErrorCommandCreateNamePrompt,
+		Label: utils.MessageCommandCreateNamePrompt,
+		Hide:  false,
 	}
 
-	libNamespace := strings.Join([]string{sublime.Scope, slug.Make(ctx.Name)}, "/")
-	libDirectory := filepath.Join(sublime.Root, libType, slug.Make(ctx.Name))
-	viteRel, _ := filepath.Rel(libDirectory, filepath.Join(sublime.Root, "libs/vite"))
+	descriptionContent := models.PromptContent{
+		Error: utils.MessageErrorCommandCreateDescriptionPrompt,
+		Label: utils.MessageCommandCreateDescriptionPrompt,
+		Hide:  false,
+	}
 
-	var template = ""
-	var link = ""
-	for i := range ctx.Templates {
-		if ctx.Templates[i].Type == ctx.Template {
-			template = ctx.Templates[i].Type
-			link = ctx.Templates[i].Link
+	typesContent := models.PromptSelectContent{
+		Label: utils.MessageCommandCreateTypePrompt,
+		Items: []string{fmt.Sprintf("Package: %s", string(utils.Package)), fmt.Sprintf("Library: %s", string(utils.Library))},
+	}
+
+	templateContent := models.PromptSelectContent{
+		Label: utils.MessageCommandCreateTemplatePrompt,
+		Items: []string{
+			fmt.Sprintf("SolidJS: %s", string(utils.Solid)),
+			fmt.Sprintf("Lit.dev: %s", string(utils.Lit)),
+			fmt.Sprintf("Vue: %s", string(utils.Vue)),
+			fmt.Sprintf("Typescript: %s", string(utils.Typescript)),
+		},
+	}
+
+	name, err := models.PromptGetInput(nameContent, 3)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+
+	description, err := models.PromptGetInput(descriptionContent, 3)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+
+	idxType, _, err := models.PromptGetSelect(typesContent)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+
+	idxTemplate, _, err := models.PromptGetSelect(templateContent)
+	if err != nil {
+		utils.ErrorOut(err.Error(), utils.ErrorPromptInvalid)
+	}
+
+	if idxType == 0 {
+		ctx.Type = utils.Package
+	} else {
+		ctx.Type = utils.Library
+	}
+
+	if idxTemplate == 0 {
+		ctx.Template = utils.Solid
+	} else if idxTemplate == 1 {
+		ctx.Template = utils.Lit
+	} else if idxTemplate == 2 {
+		ctx.Template = utils.Vue
+	} else {
+		ctx.Template = utils.Typescript
+	}
+
+	ctx.Name = slug.Make(name)
+	ctx.Description = description
+}
+
+func (ctx *CreateFlags) CreatePackage() {
+	config := core.GetConfig()
+	config.Progress.SetNumTrackersExpected(5)
+	config.Progress.Style().Visibility.Value = false
+
+	go config.Progress.Render()
+
+	config.UpdateProgress(utils.MessageCommandCreateProgressInit, 2)
+
+	ctx.LibTypeDir = "libs"
+
+	if ctx.Type == utils.Package {
+		ctx.LibTypeDir = "packages"
+	}
+
+	ctx.PackageDir = filepath.Join(config.RootDir, ctx.LibTypeDir, ctx.Name)
+
+	scope := fmt.Sprintf("@%s", ctx.Sublime.Organization)
+	libNamespace := strings.Join([]string{scope, ctx.Name}, "/")
+	viteRel, err := filepath.Rel(ctx.PackageDir, filepath.Join(config.RootDir, "libs/vite"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorMissingDirectory)
+	}
+
+	var templateLink string = ""
+	for i := range utils.TemplatesMap {
+		if utils.TemplatesMap[i].Template == ctx.Template {
+			templateLink = utils.TemplatesMap[i].Link
 			break
 		}
 	}
 
-	if link == "" {
-		color.Error.Println("Unable to determine template. Valid types are: lit, solid, vue or typescript")
-		cobra.CheckErr("Template error")
+	if templateLink == "" {
+		ctx.CommandError(utils.MessageErrorCommandCreateTemplateInvalid, utils.ErrorInvalidTemplate)
 	}
 
-	gitCmd := exec.Command("git", "clone", link, libDirectory)
-	_, err := gitCmd.Output()
+	gitCmd := exec.Command("git", "clone", templateLink, ctx.PackageDir)
+	_, err = gitCmd.Output()
 	if err != nil {
-		color.Error.Println("Unable to clone: ", template, " template type")
-		cobra.CheckErr(err)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidGit)
 	}
-
-	color.Info.Println("🛢 Template: ", template, "cloned. Initializing config files")
 
 	var libPackageJson = "templates/lib-package.json"
 	var libTsconfigJson = "templates/tsconfig-lib.json"
-	var libViteConfigJson = "templates/vite-config-lit.json"
+	var libViteConfigJson = "templates/vite-config-typescript.json"
 
-	if ctx.Template == "solid" {
+	if ctx.Template == utils.Solid {
 		libPackageJson = "templates/lib-package-solid.json"
 		libTsconfigJson = "templates/tsconfig-lib-solid.json"
 		libViteConfigJson = "templates/vite-config-solid.json"
 	}
 
-	if ctx.Template == "vue" {
+	if ctx.Template == utils.Vue {
 		libPackageJson = "templates/lib-package-vue.json"
 		libTsconfigJson = "templates/tsconfig-lib-vue.json"
 		libViteConfigJson = "templates/vite-config-vue.json"
 	}
 
-	if ctx.Template == "typescript" {
-		libViteConfigJson = "templates/vite-config-typescript.json"
+	if ctx.Template == utils.Lit {
+		libViteConfigJson = "templates/vite-config-lit.json"
 	}
 
-	packageJson, _ := FileTemplates.ReadFile(libPackageJson)
-	apiExtractorJson, _ := FileTemplates.ReadFile("templates/api-extractor-lib.json")
-	tsConfigJson, _ := FileTemplates.ReadFile(libTsconfigJson)
-	viteConfigJson, _ := FileTemplates.ReadFile(libViteConfigJson)
+	packageJson, err := FileTemplates.ReadFile(libPackageJson)
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
 
-	pkgJsonFile, _ := os.Create(filepath.Join(libDirectory, "package.json"))
-	pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &utils.PackageJsonVars{
+	apiExtractorJson, err := FileTemplates.ReadFile("templates/api-extractor-lib.json")
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
+
+	tsConfigJson, err := FileTemplates.ReadFile(libTsconfigJson)
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
+
+	viteConfigJson, err := FileTemplates.ReadFile(libViteConfigJson)
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
+
+	pkgJsonFile, err := os.Create(filepath.Join(ctx.PackageDir, "package.json"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+
+	_, err = pkgJsonFile.WriteString(utils.ProcessString(string(packageJson), &models.PackageJsonFileProps{
 		Namespace: libNamespace,
-		Repo:      sublime.Repo,
-		Name:      slug.Make(ctx.Name),
-		Scope:     sublime.Scope,
-		Type:      libType,
+		Repo:      ctx.Sublime.Repo,
+		Name:      ctx.Name,
+		Scope:     scope,
+		Type:      ctx.LibTypeDir,
 	}, "{{", "}}"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
 
-	color.Info.Println("❤️‍🔥 Package json created and configured!")
-
-	apiExtractorFile, _ := os.Create(filepath.Join(libDirectory, "api-extractor.json"))
-	apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &utils.ApiExtractorJsonVars{
-		Name: slug.Make(ctx.Name),
+	apiExtractorFile, err := os.Create(filepath.Join(ctx.PackageDir, "api-extractor.json"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+	_, err = apiExtractorFile.WriteString(utils.ProcessString(string(apiExtractorJson), &models.ApiExtractorFileProps{
+		Name: ctx.Name,
 	}, "{{", "}}"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
 
-	color.Info.Println("❤️‍🔥 Api extractor created and configured!")
-
-	tsConfigFile, _ := os.Create(filepath.Join(libDirectory, "tsconfig.json"))
-	tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &utils.TsConfigJsonVars{
+	tsConfigFile, err := os.Create(filepath.Join(ctx.PackageDir, "tsconfig.json"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+	_, err = tsConfigFile.WriteString(utils.ProcessString(string(tsConfigJson), &models.TsConfigJsonFileProps{
 		Namespace: libNamespace,
 		Vite:      viteRel,
 	}, "{{", "}}"))
-
-	color.Info.Println("❤️‍🔥 Tsconfig created and configured!")
-
-	viteConfigFile, _ := os.Create(filepath.Join(libDirectory, "vite.config.js"))
-	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &utils.ViteJsonVars{
-		Scope: sublime.Scope,
-		Name:  slug.Make(ctx.Name),
-	}, "{{", "}}"))
-
-	color.Info.Println("❤️‍🔥 Vite config created and configured!")
-
-	sublime.Packages = append(sublime.Packages, core.Packages{
-		Name:  slug.Make(ctx.Name),
-		Scope: sublime.Scope,
-		Type:  core.PackageType(ctx.Type),
-	})
-
-	data, _ := json.MarshalIndent(sublime, "", " ")
-
-	os.WriteFile(filepath.Join(sublime.Root, ".sublime.json"), data, 0644)
-
-	color.Info.Println("❤️‍🔥 Sublime json updated!")
-
-	tsConfigBase := sublime.GetTsconfig()
-
-	tsConfigBase.References = append(tsConfigBase.References, core.TsConfigReferences{
-		Path: filepath.Join("./", libType, slug.Make(ctx.Name)),
-		Name: filepath.Join(sublime.Scope, slug.Make(ctx.Name)),
-	})
-
-	tsconfig, _ := json.MarshalIndent(tsConfigBase, "", " ")
-	os.WriteFile(filepath.Join(sublime.Root, "tsconfig.base.json"), tsconfig, 0644)
-
-	color.Info.Println("❤️‍🔥 Tsconfig base updated!")
-
-	os.RemoveAll(filepath.Join(libDirectory, ".git"))
-}
-
-func (ctx *CreateCommand) YarnLink() {
-	color.Info.Println("❤️‍🔥 Init yarn link on workspace")
-
-	workspaceDir := core.GetSublime().Root
-
-	_, err := utils.YarnInstall(workspaceDir)
-
 	if err != nil {
-		color.Error.Println("Yarn wasn't installed on", workspaceDir, ". Please do it manually")
-		color.Error.Println("Yarn error:", err.Error())
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
 	}
 
-	color.Success.Println("✅ Your app is updated. Yarn performed link on packages.")
+	viteConfigFile, err := os.Create(filepath.Join(ctx.PackageDir, "vite.config.js"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+	viteConfigFile.WriteString(utils.ProcessString(string(viteConfigJson), &models.ViteJsonFileProps{
+		Scope: scope,
+		Name:  ctx.Name,
+	}, "{{", "}}"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
+
+	config.DoneProgress()
+}
+
+func (ctx *CreateFlags) UpdateRepoFiles() {
+	config := core.GetConfig()
+	app := core.GetApp()
+
+	config.AddTracker()
+
+	scope := fmt.Sprintf("@%s", ctx.Sublime.Organization)
+
+	go config.Progress.Render()
+
+	config.UpdateProgress(utils.MessageCommandCreateProgressUpdate, 2)
+
+	update := map[string]interface{}{
+		"namespace":    ctx.Sublime.Namespace,
+		"name":         ctx.Sublime.Name,
+		"repo":         ctx.Sublime.Repo,
+		"root":         "./",
+		"organization": ctx.Sublime.Organization,
+		"id":           ctx.Sublime.ID,
+		"description":  ctx.Sublime.Description,
+		"packages": append(ctx.Sublime.Packages, models.SublimePackages{
+			Name:        ctx.Name,
+			Scope:       scope,
+			Type:        ctx.Type,
+			Description: ctx.Description,
+			ID:          "",
+		}),
+	}
+
+	data, err := json.MarshalIndent(update, "", " ")
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidaIndentation)
+	}
+
+	err = os.WriteFile(filepath.Join(config.RootDir, ".sublime.json"), data, 0644)
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+
+	tsConfigBase, err := app.GetTsconfig()
+	if err != nil {
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTypescript)
+	}
+
+	tsConfigBase.References = append(tsConfigBase.References, models.TsConfigReferences{
+		Path: filepath.Join("./", ctx.LibTypeDir, ctx.Name),
+		Name: filepath.Join(scope, ctx.Name),
+	})
+
+	tsconfig, err := json.MarshalIndent(tsConfigBase, "", " ")
+	if err != nil {
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidaIndentation)
+	}
+
+	err = os.WriteFile(filepath.Join(config.RootDir, "tsconfig.base.json"), tsconfig, 0644)
+	if err != nil {
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+
+	config.DoneProgress()
+}
+
+func (ctx *CreateFlags) YarnLink() {
+	config := core.GetConfig()
+	app := core.GetApp()
+	config.AddTracker()
+
+	go config.Progress.Render()
+
+	config.UpdateProgress(utils.MessageCommandCreateProgressYarn, 2)
+
+	_, err := utils.YarnInstall(config.RootDir)
+	if err != nil {
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidYarn)
+	}
+
+	config.DoneProgress()
+}
+
+func (ctx *CreateFlags) CreateCloudPackage() {
+	config := core.GetConfig()
+	app := core.GetApp()
+	config.AddTracker()
+
+	go config.Progress.Render()
+
+	config.UpdateProgress(utils.MessageCommandCreateProgressCloud, 2)
+
+	supabase := api.NewSupabase(utils.ApiUrl, utils.ApiKey, app.Author.Token, "production")
+	packages, err := supabase.CreateWorkspacePackage(ctx.Name, ctx.Description, ctx.Type, ctx.Template, ctx.Sublime.ID)
+	if err != nil {
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidCloudOperation)
+	}
+
+	config.UpdateProgress(utils.MessageCommandCreateProgressCloud, 6)
+	err = app.UpdatePackage(&packages[0])
+	if err != nil {
+		app.RemoveConfigurationsOnPackageError(ctx.Name, ctx.LibTypeDir)
+		_, _ = supabase.DeletePackageByID(packages[0].ID)
+		ctx.CommandError(err.Error(), utils.ErrorInvalidCloudOperation)
+	}
+
+	config.UpdateProgress(utils.MessageCommandCreateProgressCloud, 1)
+	config.TerminateProgress()
+	utils.SuccessOut(utils.MessageCommandCreateSuccess)
+}
+
+func (ctx *CreateFlags) CommandError(message string, errorType utils.ErrorType) {
+	config := core.GetConfig()
+
+	if ctx.PackageDir != "" {
+		os.RemoveAll(ctx.PackageDir)
+	}
+
+	config.TerminateErrorProgress(fmt.Sprintf("Error: %s", errorType))
+	utils.ErrorOut(message, errorType)
 }
