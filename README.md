@@ -26,6 +26,34 @@ Sublime CLI is a tool to create a frontend workspace, libs or packages to distri
 - [Usage](#usage)
 - [Specs](https://github.com/websublime/sublime-cli/wiki/Specification)
 
+# Installation
+
+[(Back to top)](#table-of-contents)
+
+**Mandatory dependencies: NodeJS >= 16 and Yarn**
+
+The easiest way to get started is by copying and pasting the command below in your terminal:
+
+````
+curl -sf https://raw.githubusercontent.com/websublime/sublime-cli/main/install.sh | sh
+````
+
+Or
+
+Download the suitable binary for your OS from the list [here](https://github.com/websublime/sublime-cli/releases) and install it. Make sure to make executable with chmod +x.
+
+### Don't forget this step
+
+In your github repo you will need to setup the following secrets:
+
+| Parameter | Description |
+|---|---|
+| GH_TOKEN | Github token |
+
+This will be used on github actions to create npm deploys, artifacts uploads and releases.
+
+For OSX you will need to allow it to be executed, because it is not signed as a trusted/signed user.
+
 # Usage
 
 [(Back to top)](#table-of-contents)
@@ -128,24 +156,6 @@ Example of what runs on github action.
 
 You can adjust your workflows if needeed but be aware that changing the predefined action where it runs sublime action command can break your deploysto the websublime cloud.
 Actions also are based on the package [changeset](https://github.com/changesets/changesets). They are already configured. Please follow the link to know more about it. All your branchs should follow that guideline to create awesome changelogs/issues and independent packages versions.
-
-# Installation
-
-[(Back to top)](#table-of-contents)
-
-**Mandatory dependencies: NodeJS >= 16 and Yarn**
-
-Download the suitable binary for your OS from the list [here](https://github.com/websublime/sublime-cli/releases) and install it. Make sure to make executable with chmod +x.
-
-In your github repo you will need to setup the following secrets:
-
-| Parameter | Description |
-|---|---|
-| GH_TOKEN | Github token |
-
-This will be used on github actions to create npm deploys, artifacts uploads and releases.
-
-For OSX you will need to allow it to be executed, because it is not signed as a trusted/signed user.
 
 # Contributing
 
