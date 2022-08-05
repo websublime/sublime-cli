@@ -390,7 +390,7 @@ func (ctx *CreateWorkspace) CreateCloudWorkspace() {
 	}
 
 	supa := api.NewSupabase(utils.ApiUrl, utils.ApiSecret, utils.ApiSecret, "production")
-	_, err = supa.CreateOrganizationBucket(ctx.Organization, true)
+	_, err = supa.CreateWorkspaceBucket(filepath.Join(ctx.Organization, ctx.Name), true)
 	if err != nil {
 		utils.ErrorOut(err.Error(), utils.ErrorInvalidCloudOperation)
 	}

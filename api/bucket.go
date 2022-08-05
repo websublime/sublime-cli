@@ -40,7 +40,7 @@ import (
 	"github.com/websublime/sublime-cli/utils"
 )
 
-func (ctx *Supabase) CreateOrganizationBucket(name string, public bool) (models.Bucket, error) {
+func (ctx *Supabase) CreateWorkspaceBucket(name string, public bool) (models.Bucket, error) {
 	bucket := models.NewBucket(name, slug.Make(name), public)
 	model := models.Bucket{}
 
