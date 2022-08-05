@@ -44,6 +44,7 @@ Available Commands:
   help        Help about any command
   login       Login author on sublime cloud platform.
   register    Register author on sublime cloud platform.
+  status      Status about workspace
   version     Print the version number of sublime
   workspace   Create a workspace.
 
