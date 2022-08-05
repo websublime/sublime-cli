@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	Version   string = "v0.0.22"
+	Version   string = "v0.1.0"
 	BuildTime string = fmt.Sprintf("%d", time.Now().Unix())
 )
 
