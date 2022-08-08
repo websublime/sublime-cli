@@ -122,7 +122,7 @@ const (
 	MessageCommandRootShort       string = "CLI tool to manage monorepo packages."
 	MessageCommandRootTokenExpire string = "Your token is expired. Start renew action."
 
-	MessageErrorAuthorFileMissing  string = "Author file not found. Please register first then login to cloud service."
+	MessageErrorAuthorFileMissing  string = "Author file not found. Please register first or login to cloud service."
 	MessageErrorParseFile          string = "Unable to parse file."
 	MessageErrorIndentFile         string = "Unable to indent file."
 	MessageErrorWriteFile          string = "Unable to write file"

@@ -70,9 +70,10 @@ func (ctx *App) InitAuthor() error {
 
 func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 	config := GetConfig()
-	rcFile := filepath.Join(config.HomeDir, ".sublime/rc.json")
-	_, err := os.ReadFile(rcFile)
-	if err != nil {
+
+	sublimeDir := filepath.Join(config.HomeDir, ".sublime")
+	rcFile := filepath.Join(sublimeDir, "rc.json")
+	if _, err := os.Stat(rcFile); os.IsNotExist(err) {
 		utils.WarningOut(utils.MessageErrorAuthorFileMissing)
 	}
 
@@ -81,7 +82,13 @@ func (ctx *App) UpdateAuthorMetadata(author *models.AuthorFileProps) error {
 		return errors.New(utils.MessageErrorIndentFile)
 	}
 
-	err = os.WriteFile(filepath.Join(config.HomeDir, ".sublime/rc.json"), data, 0644)
+	if _, err := os.Stat(sublimeDir); os.IsNotExist(err) {
+		if err := os.Mkdir(sublimeDir, 0755); err != nil {
+			return errors.New(utils.MessageErrorCommandRegisterHomeDir)
+		}
+	}
+
+	err = os.WriteFile(rcFile, data, 0644)
 	if err != nil {
 		return errors.New(utils.MessageErrorWriteFile)
 	}
