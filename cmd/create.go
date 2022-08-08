@@ -209,6 +209,8 @@ func (ctx *CreateFlags) CreatePackage() {
 		ctx.CommandError(err.Error(), utils.ErrorInvalidGit)
 	}
 
+	_ = os.RemoveAll(filepath.Join(ctx.PackageDir, ".git"))
+
 	var libPackageJson = "templates/lib-package.json"
 	var libTsconfigJson = "templates/tsconfig-lib.json"
 	var libViteConfigJson = "templates/vite-config-typescript.json"
