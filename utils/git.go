@@ -35,7 +35,7 @@ func InitGit(path string) (string, error) {
 }
 
 func GetBranchList(path string) (string, error) {
-	gitCmd := exec.Command("git", "--no-pager", "diff", "--name-only", "main^..HEAD")
+	gitCmd := exec.Command("git", "--no-pager", "diff", "--name-only", "main..HEAD")
 	gitCmd.Dir = path
 	output, err := gitCmd.CombinedOutput()
 
