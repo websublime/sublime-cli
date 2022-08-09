@@ -15,7 +15,7 @@
             },
             "args": [
                 "--root", 
-                "../sublime-ui", 
+                "../sublime-sdk", 
                 "action", 
                 "--type", 
                 "branch", 
