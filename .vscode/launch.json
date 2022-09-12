@@ -18,9 +18,9 @@
                 "../sublime-sdk", 
                 "action", 
                 "--type", 
-                "branch", 
+                "tag", 
                 "--env", 
-                "develop"
+                "production"
             ]
         },
         {

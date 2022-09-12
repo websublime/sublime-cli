@@ -29,8 +29,8 @@ import (
 )
 
 type ManifestScripts struct {
-	Main string `json:"main"`
-	Esm  string `json:"esm"`
+	NoModule string `json:"nomodule"`
+	Module   string `json:"module"`
 }
 
 type Manifest struct {

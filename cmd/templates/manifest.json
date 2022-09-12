@@ -4,9 +4,10 @@
     "scope": "{{ .Scope }}",
     "repo": "{{ .Repo }}",
     "scripts": {
-        "main": "{{ .Scripts.Main }}",
-        "esm": "{{ .Scripts.Esm }}"
+        "nomodule": "{{ .Scripts.Main }}",
+        "module": "{{ .Scripts.Esm }}"
     },
     "styles": {{ .Styles }},
-    "docs": "{{ .Docs }}"
+    "docs": "{{ .Docs }}",
+    "global": false
 }
