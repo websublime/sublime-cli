@@ -2,6 +2,7 @@
 /* eslint-disable import/no-import-module-exports */
 import path from 'path';
 
+import replace from '@rollup/plugin-replace';
 import { workspacesAlias } from '{{ .Scope }}/vite';
 import postcss from 'rollup-plugin-postcss';
 import solidPlugin from 'vite-plugin-solid';
@@ -45,6 +46,12 @@ module.exports = defineConfig({
     }
   },
   plugins: [
+    replace({
+      'process.env.NODE_ENV':
+        process.env.NODE_ENV === 'production'
+          ? JSON.stringify('production')
+          : JSON.stringify('development')
+    }),
     postcss({
       inject: false
     }),

@@ -174,11 +174,17 @@ func (ctx *ActionFlags) DeployArtifacts() {
 			os.Exit(0)
 		}
 
+		// patern: <bucket>/<package-json-name>/<package-json-version>(dev-SNAPSHOT)
 		var destinationFolder = ""
+		var pkgVersion = ""
 		if isBranch {
-			destinationFolder = fmt.Sprintf("%s@%s-SNAPSHOT", pkg.Name, packageJson.Version)
+			//destinationFolder = fmt.Sprintf("%s@%s-SNAPSHOT", pkg.Name, packageJson.Version)
+			destinationFolder = fmt.Sprintf("%s/%s-SNAPSHOT", packageJson.Name, packageJson.Version)
+			pkgVersion = fmt.Sprintf("%s-SNAPSHOT", packageJson.Version)
 		} else {
-			destinationFolder = fmt.Sprintf("%s@%s", pkg.Name, packageJson.Version)
+			//destinationFolder = fmt.Sprintf("%s@%s", pkg.Name, packageJson.Version)
+			destinationFolder = fmt.Sprintf("%s/%s", packageJson.Name, packageJson.Version)
+			pkgVersion = packageJson.Version
 		}
 
 		distFiles, err := utils.PathWalk(packageDistDir)
@@ -203,23 +209,16 @@ func (ctx *ActionFlags) DeployArtifacts() {
 			Name:    pkg.Name,
 			Scope:   scope,
 			Repo:    ctx.Sublime.Repo,
-			Version: packageJson.Version,
+			Version: pkgVersion,
 			Scripts: &core.ManifestScripts{
-				Main: fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Main)),
-				Esm:  fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Module)),
+				NoModule: fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Main)),
+				Module:   fmt.Sprintf("%s/%s", manifestBaseLink, filepath.Base(packageJson.Module)),
 			},
 			Styles: make([]string, 0),
 			Docs:   fmt.Sprintf("https://websublime.dev/organization/%s/%s/%s", ctx.Sublime.Organization, ctx.Sublime.Name, pkg.Name),
 		})
 
-		var manifestDestination = ""
-		if isBranch {
-			manifestDestination = fmt.Sprintf("manifests/%s/%s", packageJson.Name, string(env))
-		} else {
-			manifestDestination = packageJson.Name
-		}
-
-		manifest, err := supabase.Upload(ctx.Sublime.Organization, manifestFile.Name(), manifestDestination)
+		manifest, err := supabase.Upload(ctx.Sublime.Organization, manifestFile.Name(), destinationFolder)
 		if err != nil {
 			utils.WarningOut(err.Error())
 			os.Exit(0)
