@@ -4,8 +4,8 @@
     "scope": "{{ .Scope }}",
     "repo": "{{ .Repo }}",
     "scripts": {
-        "nomodule": "{{ .Scripts.Main }}",
-        "module": "{{ .Scripts.Esm }}"
+        "nomodule": "{{ .Scripts.NoModule }}",
+        "module": "{{ .Scripts.Module }}"
     },
     "styles": {{ .Styles }},
     "docs": "{{ .Docs }}",
