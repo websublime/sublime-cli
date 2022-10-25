@@ -106,6 +106,10 @@ type ArtifactsYamlFileProps struct {
 	Version string
 }
 
+type SnapshotsYamlFileProps struct {
+	Version string
+}
+
 type ApiExtractorFileProps struct {
 	Name string
 }

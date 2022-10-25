@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup node
         uses: actions/setup-node@v2
@@ -39,3 +40,5 @@ jobs:
           tar -xf sublime-[[ .Version ]]-linux-amd64.tar.gz sublime
           chmod +x sublime
           ./sublime action --type branch --env "$NODE_ENV"
+          rm -rf sublime-[[ .Version ]]-linux-amd64.tar.gz
+          rm -rf sublime

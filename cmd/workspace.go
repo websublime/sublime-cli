@@ -283,6 +283,10 @@ func (ctx *CreateWorkspace) Workflows() {
 	if err != nil {
 		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
 	}
+	snapshotYaml, err := FileTemplates.ReadFile("templates/workflow-snapshot.yaml")
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
 
 	releaseYamlFile, err := os.Create(filepath.Join(ctx.WorkspaceDir, ".github/workflows/release.yaml"))
 	if err != nil {
@@ -313,6 +317,17 @@ func (ctx *CreateWorkspace) Workflows() {
 		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
 	}
 	_, err = artifactYamlFile.WriteString(utils.ProcessString(string(artifactYaml), &models.ArtifactsYamlFileProps{
+		Version: Version,
+	}, "[[", "]]"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorInvalidTemplate)
+	}
+
+	snapshotYamlFile, err := os.Create(filepath.Join(ctx.WorkspaceDir, ".github/workflows/snapshot.yaml"))
+	if err != nil {
+		ctx.CommandError(err.Error(), utils.ErrorCreateFile)
+	}
+	_, err = snapshotYamlFile.WriteString(utils.ProcessString(string(snapshotYaml), &models.SnapshotsYamlFileProps{
 		Version: Version,
 	}, "[[", "]]"))
 	if err != nil {

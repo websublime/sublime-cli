@@ -1,0 +1,55 @@
+name: Build and Create Snapshots
+
+on:
+  push:
+    branches:
+      - 'releases/snapshots'
+
+env:
+  CI: true
+  NODE_ENV: "develop"
+
+jobs:
+  feat-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build
+        run: yarn build
+
+      - name: Setup CI Git User
+        run: |
+          git config --global user.name "[[ .Username ]]"
+          git config --global user.email "[[ .Email ]]"
+          cat << EOF > "$HOME/.npmrc"
+            //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN
+            [[.Scope]]:registry=https://npm.pkg.github.com
+          EOF
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Create Snapshot
+        uses: changesets/action@v1
+        with:
+          version: yarn changeset version --snapshot SNAPSHOT
+          publish: yarn changeset publish --tag SNAPSHOT --no-git-tag
+          title: "chore(snapshot): Packages snapshots"
+          commit: "chore(snapshot): releasing snapshot preview"
+          createGithubReleases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GH_TOKEN }}

@@ -137,15 +137,11 @@ If you run the cli from inside your workspace folder this parameters are resolve
 Predefined actions were created when you created an workspace. This actions will trigger based on:
 - Branch name as: feat/...
 - Tag creation
+- Snapshot
 
 Also there one release that will put as npm package on github to be consume as that if you need.
 
-The branch will create a snapshot artifact to be use for development needs. On tag will create the artifact for production.
-Example of what runs on github action.
-
-```bash
-> sublime action --type branch --env "$NODE_ENV"
-```
+To create a snapshot, create a branch ```releases/snapshots``` and just follow the step of ```yarn changesets```. The pipeline will create an artifact with next version and sufixed with snapshot for testing purposes (v1.0.0-SNAPSHOT).
 
 | Parameter | Description |
 |---|---|
