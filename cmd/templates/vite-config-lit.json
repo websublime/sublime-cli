@@ -12,7 +12,8 @@ import { version } from './package.json';
 
 module.exports = defineConfig({
   define: {
-    Version: JSON.stringify(version)
+    Version: JSON.stringify(version),
+    global: 'globalThis'
   },
   build: {
     lib: {
