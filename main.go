@@ -21,8 +21,8 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/websublime/sublime-cli/cmd"
+import "github.com/websublime/sublime-cli/commands"
 
 func main() {
-	cmd.Execute()
+	commands.Execute()
 }
